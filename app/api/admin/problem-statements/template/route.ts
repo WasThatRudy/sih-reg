@@ -10,7 +10,7 @@ export async function GET() {
         title: "AI for Agriculture",
         description:
           "Create an AI model to detect crop diseases using image recognition and provide treatment recommendations.",
-        domain: "Smart Agriculture",
+        domain: "Software",
         link: "https://example.com/problem-statement-1",
         maxTeams: 3,
       },
@@ -19,7 +19,7 @@ export async function GET() {
         title: "Blockchain for Healthcare",
         description:
           "Develop a secure blockchain-based system for managing patient medical records and ensuring data privacy.",
-        domain: "HealthTech",
+        domain: "Software",
         link: "https://example.com/problem-statement-2",
         maxTeams: 3,
       },
@@ -28,7 +28,8 @@ export async function GET() {
         title: "Smart Traffic Management",
         description:
           "Design an intelligent traffic management system using IoT sensors and machine learning algorithms.",
-        domain: "Smart Transportation",
+        domain: "Hardware
+        ",
         link: "https://example.com/problem-statement-3",
         maxTeams: 3,
       },

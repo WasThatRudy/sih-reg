@@ -11,7 +11,7 @@ interface PSRowData {
   psNumber: string;
   title: string;
   description: string;
-  domain: string;
+  domain: "Hardware" | "Software";
   link: string;
   maxTeams?: number;
 }

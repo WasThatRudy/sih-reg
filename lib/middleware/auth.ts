@@ -60,6 +60,7 @@ export async function verifyAuth(
   }
 }
 
+
 /**
  * Middleware to verify admin role
  */

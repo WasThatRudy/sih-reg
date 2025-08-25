@@ -1,0 +1,205 @@
+'use client';
+import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { 
+  User, 
+  onAuthStateChanged, 
+  signInWithEmailAndPassword, 
+  createUserWithEmailAndPassword, 
+  signOut as firebaseSignOut,
+  updateProfile,
+  signInWithPopup,
+  GoogleAuthProvider
+} from 'firebase/auth';
+import { auth } from '@/lib/firebase';
+
+interface AuthContextType {
+  user: User | null;
+  loading: boolean;
+  hasTeam: boolean;
+  isAdmin: boolean;
+  signIn: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string, displayName: string) => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
+  signOut: () => Promise<void>;
+  refreshTeamStatus: () => Promise<void>;
+}
+
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
+
+export const useAuth = () => {
+  const context = useContext(AuthContext);
+  if (context === undefined) {
+    throw new Error('useAuth must be used within an AuthProvider');
+  }
+  return context;
+};
+
+interface AuthProviderProps {
+  children: ReactNode;
+}
+
+export const AuthProvider = ({ children }: AuthProviderProps) => {
+  const [user, setUser] = useState<User | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [hasTeam, setHasTeam] = useState(false);
+  const [isAdmin, setIsAdmin] = useState(false);
+
+  // Function to check team registration status
+  const refreshTeamStatus = async () => {
+    const currentUser = auth.currentUser;
+    if (!currentUser) {
+      setHasTeam(false);
+      return;
+    }
+
+    try {
+      const token = await currentUser.getIdToken();
+      const response = await fetch('/api/teamRegistration', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        setHasTeam(!!data.team);
+      } else {
+        setHasTeam(false);
+      }
+    } catch (error) {
+      console.error('Error checking team status:', error);
+      setHasTeam(false);
+    }
+  };
+
+  useEffect(() => {
+    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+      setUser(user);
+      setLoading(false);
+      
+      // Check team status and admin role for authenticated users
+      if (user) {
+        try {
+          const token = await user.getIdToken();
+          
+          // Check user role and team status
+          const [userResponse, teamResponse] = await Promise.all([
+            fetch('/api/auth/verify', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            }),
+            fetch('/api/teamRegistration', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            })
+          ]);
+          
+          // Check admin role
+          if (userResponse.ok) {
+            const userData = await userResponse.json();
+            setIsAdmin(userData.user?.role === 'admin');
+          } else {
+            setIsAdmin(false);
+          }
+          
+          // Check team status
+          if (teamResponse.ok) {
+            const teamData = await teamResponse.json();
+            setHasTeam(!!teamData.team);
+          } else {
+            setHasTeam(false);
+          }
+        } catch (error) {
+          console.error('Error checking user status:', error);
+          setHasTeam(false);
+          setIsAdmin(false);
+        }
+      } else {
+        setHasTeam(false);
+        setIsAdmin(false);
+      }
+    });
+
+    return unsubscribe;
+  }, []);
+
+  const signIn = async (email: string, password: string) => {
+    setLoading(true);
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+    } catch (error) {
+      setLoading(false);
+      throw error;
+    }
+  };
+
+  const signUp = async (email: string, password: string, displayName: string) => {
+    setLoading(true);
+    try {
+      const { user } = await createUserWithEmailAndPassword(auth, email, password);
+      await updateProfile(user, { displayName });
+    } catch (error) {
+      setLoading(false);
+      throw error;
+    }
+  };
+
+  const signInWithGoogle = async () => {
+    setLoading(true);
+    try {
+      const provider = new GoogleAuthProvider();
+      const result = await signInWithPopup(auth, provider);
+      
+      // Sync user with backend after Google OAuth
+      if (result.user) {
+        try {
+          const token = await result.user.getIdToken();
+          await fetch('/api/auth/verify', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              name: result.user.displayName || '',
+              email: result.user.email || '',
+              firebaseUid: result.user.uid
+            })
+          });
+        } catch (syncError) {
+          console.error('Error syncing user with backend:', syncError);
+          // Don't throw here as the user is still authenticated
+        }
+      }
+    } catch (error) {
+      setLoading(false);
+      throw error;
+    }
+  };
+
+  const signOut = async () => {
+    setLoading(true);
+    try {
+      await firebaseSignOut(auth);
+    } catch (error) {
+      setLoading(false);
+      throw error;
+    }
+  };
+
+  const value = {
+    user,
+    loading,
+    hasTeam,
+    isAdmin,
+    signIn,
+    signUp,
+    signInWithGoogle,
+    signOut,
+    refreshTeamStatus,
+  };
+
+  return (
+    <AuthContext.Provider value={value}>
+      {children}
+    </AuthContext.Provider>
+  );
+};

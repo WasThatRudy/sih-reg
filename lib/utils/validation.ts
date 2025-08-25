@@ -231,3 +231,72 @@ export function generateTeamToken(teamId: string): string {
     "base64"
   );
 }
+
+// Legacy frontend validation functions for compatibility
+export const validateEmail = (email: string): boolean => {
+  return EMAIL_REGEX.test(email);
+};
+
+export const validatePhone = (phone: string): boolean => {
+  return PHONE_REGEX.test(phone.replace(/\s+/g, ''));
+};
+
+export const validateName = (name: string): boolean => {
+  const nameRegex = /^[a-zA-Z\s.']+$/;
+  return nameRegex.test(name) && name.trim().length >= 2;
+};
+
+export const validateTeamName = (teamName: string): boolean => {
+  return teamName.trim().length >= 3 && teamName.trim().length <= 50;
+};
+
+export const validateBranch = (branch: string): boolean => {
+  return branch.trim().length >= 2;
+};
+
+export const isRequired = (value: string): boolean => {
+  return value.trim().length > 0;
+};
+
+export const formatPhoneNumber = (phone: string): string => {
+  const cleaned = phone.replace(/\D/g, '');
+  if (cleaned.length === 10) {
+    return cleaned.replace(/(\d{5})(\d{5})/, '$1 $2');
+  }
+  return phone;
+};
+
+export const getValidationMessage = (field: string, value: string): string => {
+  if (!isRequired(value)) {
+    return `${field} is required`;
+  }
+
+  switch (field.toLowerCase()) {
+    case 'email':
+      if (!validateEmail(value)) {
+        return 'Please enter a valid email address';
+      }
+      break;
+    case 'phone':
+      if (!validatePhone(value)) {
+        return 'Please enter a valid 10-digit phone number';
+      }
+      break;
+    case 'name':
+      if (!validateName(value)) {
+        return 'Name should contain only letters, spaces, dots, and apostrophes';
+      }
+      break;
+    case 'team name':
+      if (!validateTeamName(value)) {
+        return 'Team name should be 3-50 characters long';
+      }
+      break;
+    case 'branch':
+      if (!validateBranch(value)) {
+        return 'Please enter a valid branch';
+      }
+      break;
+  }
+  return '';
+};

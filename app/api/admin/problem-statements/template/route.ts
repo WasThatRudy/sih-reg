@@ -28,8 +28,7 @@ export async function GET() {
         title: "Smart Traffic Management",
         description:
           "Design an intelligent traffic management system using IoT sensors and machine learning algorithms.",
-        domain: "Hardware
-        ",
+        domain: "Hardware",
         link: "https://example.com/problem-statement-3",
         maxTeams: 3,
       },

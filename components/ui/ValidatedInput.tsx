@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getValidationMessage } from '@/lib/utils/validation';
+import { EyeIcon } from 'lucide-react';
 
 interface ValidatedInputProps {
   label: string;
@@ -28,7 +29,7 @@ export default function ValidatedInput({
 }: ValidatedInputProps) {
   const [touched, setTouched] = useState(false);
   const [validationError, setValidationError] = useState('');
-
+  const [showPassword, setShowPassword] = useState(false);
   const validateField = (val: string) => {
     if (!validationType) return '';
     return getValidationMessage(validationType, val);
@@ -74,7 +75,7 @@ export default function ValidatedInput({
       </label>
       <div className="relative">
         <input
-          type={type}
+          type={showPassword ? 'text' : type}
           value={value}
           onChange={handleChange}
           onBlur={handleBlur}
@@ -88,9 +89,14 @@ export default function ValidatedInput({
           placeholder={placeholder}
           required={required}
         />
+        {type === 'password' && (
+          <button type="button" className="absolute right-3 top-1/2 transform -translate-y-1/2" onClick={() => setShowPassword(!showPassword)}>
+            <EyeIcon className="w-5 h-5 text-gray-400" />
+          </button>
+        )}
         
         {/* Validation icon */}
-        <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+        {type !== 'password' && <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
           {hasError && (
             <motion.svg
               initial={{ scale: 0 }}
@@ -113,7 +119,7 @@ export default function ValidatedInput({
               <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
             </motion.svg>
           )}
-        </div>
+        </div>}
       </div>
       
       {/* Error message */}

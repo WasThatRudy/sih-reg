@@ -92,15 +92,6 @@ export default function Hero() {
             />
             <span className="relative font-body">Get Started</span>
           </motion.button>
-
-          <motion.button 
-            className="px-10 py-5 border border-gray-600 text-gray-300 rounded-full font-medium hover:border-subheading hover:text-subheading transition-colors duration-300 tracking-wide"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            transition={{ type: "spring", stiffness: 400, damping: 17 }}
-          >
-            <span className="font-body">Learn More</span>
-          </motion.button>
         </motion.div>
       </div>
 

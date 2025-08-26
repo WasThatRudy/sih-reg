@@ -27,7 +27,7 @@ export default function AccordionSection({
   const getStatusText = () => {
     switch (status) {
       case 'locked': return 'Locked';
-      case 'required': return 'Required';
+      case 'required': return '';
       case 'optional': return 'Optional';
       case 'completed': return 'Completed';
       default: return 'Required';

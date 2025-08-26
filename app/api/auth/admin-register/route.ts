@@ -8,7 +8,7 @@ export async function POST(request: NextRequest) {
     await dbConnect();
 
     const body = await request.json();
-    const { email, adminSecretKey } = body;
+    const { name, email, password, adminSecretKey } = body;
 
     // Validate admin secret key
     if (!adminSecretKey || adminSecretKey !== process.env.ADMIN_SECRET_KEY) {
@@ -27,32 +27,86 @@ export async function POST(request: NextRequest) {
     }
 
     // Check if user exists
-    const existingUser = await User.findOne({ email: email.toLowerCase() });
-    if (!existingUser) {
-      return NextResponse.json(
-        { success: false, error: "User with this email does not exist" },
-        { status: 404 }
-      );
-    }
+    let user = await User.findOne({ email: email.toLowerCase() });
+    let isNewUser = false;
+    let firebaseUid = "";
 
-    // Check if user is already an admin
-    if (existingUser.role === "admin") {
-      return NextResponse.json(
-        { success: false, error: "User is already an admin" },
-        { status: 400 }
-      );
-    }
+    if (user) {
+      // User exists - check if already admin
+      if (user.role === "admin") {
+        return NextResponse.json(
+          { success: false, error: "User is already an admin" },
+          { status: 400 }
+        );
+      }
 
-    // Update user role to admin in MongoDB
-    existingUser.role = "admin";
-    await existingUser.save();
+      // Update existing user role to admin
+      user.role = "admin";
+      firebaseUid = user.firebaseUid;
+    } else {
+      // User doesn't exist - create new admin user
+      isNewUser = true;
 
-    // Update custom claims in Firebase (if Firebase is configured)
-    if (auth && existingUser.firebaseUid) {
+      // Validate required fields for new user
+      if (!name || name.trim().length === 0) {
+        return NextResponse.json(
+          { success: false, error: "Name is required for new admin user" },
+          { status: 400 }
+        );
+      }
+
+      if (!password || password.length < 8) {
+        return NextResponse.json(
+          {
+            success: false,
+            error:
+              "Password must be at least 8 characters long for new admin user",
+          },
+          { status: 400 }
+        );
+      }
+
+      // Create Firebase user first
+      if (!auth) {
+        return NextResponse.json(
+          { success: false, error: "Authentication service unavailable" },
+          { status: 500 }
+        );
+      }
+
       try {
-        await auth.setCustomUserClaims(existingUser.firebaseUid, {
+        const firebaseUser = await auth.createUser({
+          email: email.toLowerCase(),
+          password: password,
+          displayName: name.trim(),
+        });
+        firebaseUid = firebaseUser.uid;
+      } catch (firebaseError: unknown) {
+        console.error("Firebase user creation error:", firebaseError);
+        return NextResponse.json(
+          { success: false, error: "Failed to create user account" },
+          { status: 500 }
+        );
+      }
+
+      // Create new user in MongoDB
+      user = new User({
+        email: email.toLowerCase(),
+        name: name.trim(),
+        role: "admin",
+        firebaseUid: firebaseUid,
+      });
+    }
+
+    // Save user to MongoDB
+    await user.save();
+
+    // Update/set custom claims in Firebase
+    if (auth && firebaseUid) {
+      try {
+        await auth.setCustomUserClaims(firebaseUid, {
           role: "admin",
-          userId: existingUser._id.toString(),
+          userId: user._id.toString(),
         });
       } catch (firebaseError) {
         console.error("Firebase claims update error:", firebaseError);
@@ -62,19 +116,21 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      message: "User role updated to admin successfully",
+      message: isNewUser
+        ? "Admin user created successfully"
+        : "User role updated to admin successfully",
       user: {
-        _id: existingUser._id,
-        email: existingUser.email,
-        name: existingUser.name,
-        role: existingUser.role,
+        _id: user._id,
+        email: user.email,
+        name: user.name,
+        role: user.role,
       },
     });
   } catch (error: unknown) {
-    console.error("Admin role update error:", error);
+    console.error("Admin registration error:", error);
 
     return NextResponse.json(
-      { success: false, error: "Failed to update user role to admin" },
+      { success: false, error: "Failed to register admin user" },
       { status: 500 }
     );
   }

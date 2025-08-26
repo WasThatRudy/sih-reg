@@ -167,12 +167,16 @@ export async function GET(request: NextRequest) {
     if (!team) {
       return NextResponse.json({
         success: true,
+        isRegistered: false,
+        message: "No team registered yet. You can create a new team.",
         team: null,
       });
     }
 
     return NextResponse.json({
       success: true,
+      isRegistered: true,
+      message: `Your team "${team.teamName}" is already registered`,
       team: {
         _id: team._id,
         teamName: team.teamName,

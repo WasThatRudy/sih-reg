@@ -251,7 +251,31 @@ export const validateTeamName = (teamName: string): boolean => {
 };
 
 export const validateBranch = (branch: string): boolean => {
-  return branch.trim().length >= 2;
+  // Import branches for validation
+  const validBranches = [
+    "Artificial Intelligence and Machine Learning",
+    "Aeronautical Engineering",
+    "Automobile Engineering",
+    "Biotechnology",
+    "Computer Science and Engineering",
+    "Computer Science and Business Systems",
+    "Computer Science & Engineering (Cyber Security)",
+    "Computer Science & Engineering (Data Science)",
+    "Computer Science & Engineering (Internet of Things and Cyber Security Including Block Chain Technology)",
+    "Computer Science and Design",
+    "Chemical Engineering",
+    "Civil Engineering",
+    "Electrical & Electronics Engineering",
+    "Electronics & Communication Engineering",
+    "Electronics and Instrumentation Engineering",
+    "Electronics and Telecommunication Engineering",
+    "Information Science and Engineering",
+    "Mechanical Engineering",
+    "Medical Electronics Engineering",
+    "Robotics and Artificial Intelligence",
+  ];
+  
+  return validBranches.includes(branch.trim());
 };
 
 export const isRequired = (value: string): boolean => {
@@ -294,9 +318,83 @@ export const getValidationMessage = (field: string, value: string): string => {
       break;
     case 'branch':
       if (!validateBranch(value)) {
-        return 'Please enter a valid branch';
+        return 'Please select a valid branch from the dropdown';
       }
       break;
   }
   return '';
+};
+
+// Validation for checking duplicate emails and phone numbers across team leader and members
+export interface TeamFormData {
+  teamLeader: {
+    email: string;
+    phone: string;
+  };
+  members: Array<{
+    email: string;
+    phone: string;
+  }>;
+}
+
+export const validateNoDuplicates = (formData: TeamFormData): {
+  emailDuplicates: { [key: string]: string };
+  phoneDuplicates: { [key: string]: string };
+} => {
+  const emailDuplicates: { [key: string]: string } = {};
+  const phoneDuplicates: { [key: string]: string } = {};
+  
+  // Collect all emails and phones with their sources
+  const emailMap = new Map<string, string[]>();
+  const phoneMap = new Map<string, string[]>();
+
+  // Add team leader email and phone if they exist
+  if (formData.teamLeader.email && formData.teamLeader.email.trim()) {
+    const email = formData.teamLeader.email.toLowerCase().trim();
+    if (!emailMap.has(email)) emailMap.set(email, []);
+    emailMap.get(email)?.push('team leader');
+  }
+  if (formData.teamLeader.phone && formData.teamLeader.phone.trim()) {
+    const phone = formData.teamLeader.phone.replace(/\s+/g, '');
+    if (!phoneMap.has(phone)) phoneMap.set(phone, []);
+    phoneMap.get(phone)?.push('team leader');
+  }
+
+  // Add member emails and phones
+  formData.members.forEach((member, index) => {
+    const memberKey = `member ${index + 1}`;
+    
+    if (member.email && member.email.trim()) {
+      const email = member.email.toLowerCase().trim();
+      if (!emailMap.has(email)) emailMap.set(email, []);
+      emailMap.get(email)?.push(memberKey);
+    }
+    
+    if (member.phone && member.phone.trim()) {
+      const phone = member.phone.replace(/\s+/g, '');
+      if (!phoneMap.has(phone)) phoneMap.set(phone, []);
+      phoneMap.get(phone)?.push(memberKey);
+    }
+  });
+
+  // Find duplicates and create error messages for each source
+  emailMap.forEach((sources, email) => {
+    if (sources.length > 1) {
+      sources.forEach(source => {
+        const otherSources = sources.filter(s => s !== source);
+        emailDuplicates[source] = `This email is also used by ${otherSources.join(' and ')}`;
+      });
+    }
+  });
+
+  phoneMap.forEach((sources, phone) => {
+    if (sources.length > 1) {
+      sources.forEach(source => {
+        const otherSources = sources.filter(s => s !== source);
+        phoneDuplicates[source] = `This phone number is also used by ${otherSources.join(' and ')}`;
+      });
+    }
+  });
+
+  return { emailDuplicates, phoneDuplicates };
 };

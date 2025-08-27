@@ -10,6 +10,7 @@ import CustomDropdown from "@/components/ui/CustomDropdown";
 import AccordionSection from "@/components/ui/AccordionSection";
 import ValidatedInput from "@/components/ui/ValidatedInput";
 import { useAuth } from "@/lib/context/AuthContext";
+import { validateNoDuplicates } from "@/lib/utils/validation";
 
 interface ProblemStatement {
   _id: string;
@@ -42,6 +43,10 @@ export default function Registration() {
   const [loading, setLoading] = useState(true);
   const [submitLoading, setSubmitLoading] = useState(false);
   const [dataFetched, setDataFetched] = useState(false);
+  const [duplicateErrors, setDuplicateErrors] = useState<{
+    emailDuplicates: { [key: string]: string };
+    phoneDuplicates: { [key: string]: string };
+  }>({ emailDuplicates: {}, phoneDuplicates: {} });
 
   const [formData, setFormData] = useState({
     teamName: "",
@@ -115,9 +120,46 @@ export default function Registration() {
     },
   });
 
+  // Check for duplicate emails and phone numbers
+  const checkDuplicates = () => {
+    const duplicates = validateNoDuplicates({
+      teamLeader: {
+        email: formData.teamLeader.email,
+        phone: formData.teamLeader.phone,
+      },
+      members: formData.members.map(member => ({
+        email: member.email,
+        phone: member.phone,
+      })),
+    });
+    setDuplicateErrors(duplicates);
+    return Object.keys(duplicates.emailDuplicates).length === 0 && Object.keys(duplicates.phoneDuplicates).length === 0;
+  };
+
+  // Helper functions to get specific duplicate errors
+  const getDuplicateError = (fieldType: 'email' | 'phone', source: string) => {
+    const errors = fieldType === 'email' ? duplicateErrors.emailDuplicates : duplicateErrors.phoneDuplicates;
+    return errors[source] || '';
+  };
+
+  // Helper functions for member errors
+  const getMemberEmailError = (memberIndex: number) => {
+    return getDuplicateError('email', `member ${memberIndex + 1}`);
+  };
+
+  const getMemberPhoneError = (memberIndex: number) => {
+    return getDuplicateError('phone', `member ${memberIndex + 1}`);
+  };
+
   // Handle form submission
   const handleSubmit = async () => {
     if (!user || !isFormComplete) return;
+
+    // Check for duplicates before submitting
+    if (!checkDuplicates()) {
+      alert("Please fix duplicate email/phone number issues before submitting.");
+      return;
+    }
 
     setSubmitLoading(true);
     try {
@@ -180,23 +222,38 @@ export default function Registration() {
   // Check if each step is completed
   const isTeamInfoComplete = formData.teamName && formData.problemStatement;
 
+  const hasDuplicates = Object.keys(duplicateErrors.emailDuplicates).length > 0 || Object.keys(duplicateErrors.phoneDuplicates).length > 0;
+
+  // Check for team leader duplicates specifically
+  const teamLeaderHasDuplicates = duplicateErrors.emailDuplicates['team leader'] || duplicateErrors.phoneDuplicates['team leader'];
+
   const isTeamLeaderComplete =
     formData.teamLeader.name &&
     formData.teamLeader.email &&
     formData.teamLeader.phone &&
     formData.teamLeader.year &&
     formData.teamLeader.branch &&
-    formData.teamLeader.gender;
+    formData.teamLeader.gender &&
+    !teamLeaderHasDuplicates;
 
   const isAtLeastOneMemberComplete = formData.members.some(
     (member) => member.name && member.email && member.phone
   );
 
-  const canShowTeamLeader = isTeamInfoComplete;
-  const canShowTeamMembers = isTeamInfoComplete && isTeamLeaderComplete;
+  // Check if any members have duplicates
+  const membersHaveDuplicates = Object.keys(duplicateErrors.emailDuplicates).some(key => 
+    key.includes('member')
+  ) || Object.keys(duplicateErrors.phoneDuplicates).some(key => 
+    key.includes('member')
+  );
+
+  const isTeamMembersComplete = isAtLeastOneMemberComplete && !membersHaveDuplicates;
+
+  const canShowTeamLeader = true;
+  const canShowTeamMembers = true;
   const canShowSubmit = isTeamInfoComplete && isTeamLeaderComplete;
   const isFormComplete =
-    isTeamInfoComplete && isTeamLeaderComplete && isAtLeastOneMemberComplete;
+    isTeamInfoComplete && isTeamLeaderComplete && isAtLeastOneMemberComplete && !hasDuplicates;
 
   // State for which sections are manually opened
   const [openSections, setOpenSections] = useState<{ [key: number]: boolean }>({
@@ -206,30 +263,24 @@ export default function Registration() {
   });
 
   const toggleSection = (section: number) => {
-    if (
-      section === 1 ||
-      (section === 2 && canShowTeamLeader) ||
-      (section === 3 && canShowTeamMembers)
-    ) {
-      setOpenSections((prev) => ({
-        ...prev,
-        [section]: !prev[section],
-      }));
-    }
+    setOpenSections((prev) => ({
+      ...prev,
+      [section]: !prev[section],
+    }));
   };
 
   // Auto-open next section when current is completed
   useEffect(() => {
-    if (isTeamInfoComplete && canShowTeamLeader && !openSections[2]) {
+    if (isTeamInfoComplete && !openSections[2]) {
       setOpenSections((prev) => ({ ...prev, 2: true, 1: false }));
     }
-  }, [isTeamInfoComplete, canShowTeamLeader]);
+  }, [isTeamInfoComplete, openSections[2]]);
 
   useEffect(() => {
-    if (isTeamLeaderComplete && canShowTeamMembers && !openSections[3]) {
+    if (isTeamLeaderComplete && !openSections[3]) {
       setOpenSections((prev) => ({ ...prev, 3: true, 2: false }));
     }
-  }, [isTeamLeaderComplete, canShowTeamMembers]);
+  }, [isTeamLeaderComplete, openSections[3]]);
 
   // Fetch problem statements and check for existing team
   useEffect(() => {
@@ -290,6 +341,11 @@ export default function Registration() {
       }));
     }
   }, [user, formData.teamLeader.name, formData.teamLeader.email, existingTeam]);
+
+  // Check for duplicates whenever form data changes
+  useEffect(() => {
+    checkDuplicates();
+  }, [formData.teamLeader.email, formData.teamLeader.phone, formData.members]);
 
   // Show loading spinner
   if (loading) {
@@ -498,16 +554,11 @@ export default function Registration() {
                 stepNumber={2}
                 title="Team Leader Information"
                 isComplete={!!isTeamLeaderComplete}
-                isUnlocked={!!canShowTeamLeader}
+                isUnlocked={true}
                 isOpen={openSections[2]}
                 onToggle={() => toggleSection(2)}
-                status={
-                  !canShowTeamLeader
-                    ? "locked"
-                    : isTeamLeaderComplete
-                    ? "completed"
-                    : "required"
-                }
+                status={isTeamLeaderComplete ? "completed" : "required"}
+                allowOverflow={true}
               >
                 <TeamLeader
                   teamLeader={formData.teamLeader}
@@ -518,6 +569,8 @@ export default function Registration() {
                       (formData.teamLeader.name || formData.teamLeader.email)
                     )
                   }
+                  emailError={getDuplicateError('email', 'team leader')}
+                  phoneError={getDuplicateError('phone', 'team leader')}
                 />
               </AccordionSection>
 
@@ -525,17 +578,22 @@ export default function Registration() {
               <AccordionSection
                 stepNumber={3}
                 title="Team Members Information"
-                isComplete={false}
-                isUnlocked={!!canShowTeamMembers}
+                isComplete={!!isTeamMembersComplete}
+                isUnlocked={true}
                 isOpen={openSections[3]}
                 onToggle={() => toggleSection(3)}
-                status={!canShowTeamMembers ? "locked" : "optional"}
+                status={isTeamMembersComplete ? "completed" : "optional"}
+                allowOverflow={true}
               >
                 <TeamMembers
                   members={formData.members}
                   onInputChange={handleInputChange}
+                  getEmailError={getMemberEmailError}
+                  getPhoneError={getMemberPhoneError}
                 />
               </AccordionSection>
+
+
 
               {/* Submit Button */}
               <motion.div
@@ -557,7 +615,7 @@ export default function Registration() {
                 ) : (
                   <div className="text-center">
                     <div className="px-12 py-5 bg-gray-700 text-gray-400 rounded-full text-lg font-medium tracking-wide shadow-2xl font-body cursor-not-allowed">
-                      Complete required steps to submit
+                      {hasDuplicates ? "Fix duplicate information to submit" : "Complete required steps to submit"}
                     </div>
                   </div>
                 )}

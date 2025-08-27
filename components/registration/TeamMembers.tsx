@@ -1,12 +1,13 @@
 'use client';
 import Slider from '@/components/ui/Slider';
 import ValidatedInput from '@/components/ui/ValidatedInput';
+import CustomDropdown from '@/components/ui/CustomDropdown';
+import { branchOptions } from '@/data/branches';
 
 interface TeamMember {
   name: string;
   email: string;
   phone: string;
-  college: string;
   year: string;
   branch: string;
   gender: string;
@@ -16,6 +17,8 @@ interface TeamMember {
 interface TeamMembersProps {
   members: TeamMember[];
   onInputChange: (section: string, field: string, value: string, index: number) => void;
+  getEmailError?: (memberIndex: number) => string;
+  getPhoneError?: (memberIndex: number) => string;
 }
 
 const yearOptions = [
@@ -31,7 +34,7 @@ const genderOptions = [
   { value: 'Other', label: 'Other' }
 ];
 
-export default function TeamMembers({ members, onInputChange }: TeamMembersProps) {
+export default function TeamMembers({ members, onInputChange, getEmailError, getPhoneError }: TeamMembersProps) {
   return (
     <div>
       <div className="space-y-6">
@@ -54,6 +57,7 @@ export default function TeamMembers({ members, onInputChange }: TeamMembersProps
                 onChange={(value) => onInputChange('members', 'email', value, index)}
                 placeholder="Enter email address"
                 validationType="email"
+                error={getEmailError ? getEmailError(index) : ''}
               />
               <ValidatedInput
                 label="Phone"
@@ -62,14 +66,7 @@ export default function TeamMembers({ members, onInputChange }: TeamMembersProps
                 onChange={(value) => onInputChange('members', 'phone', value, index)}
                 placeholder="Enter phone number"
                 validationType="phone"
-              />
-              <ValidatedInput
-                label="College"
-                type="text"
-                value={member.college}
-                onChange={(value) => onInputChange('members', 'college', value, index)}
-                placeholder="Enter college name"
-                validationType="name"
+                error={getPhoneError ? getPhoneError(index) : ''}
               />
               <div>
                 <Slider
@@ -90,14 +87,15 @@ export default function TeamMembers({ members, onInputChange }: TeamMembersProps
                     onOtherChange={(value) => onInputChange('members', 'otherGender', value, index)}
                 />
               </div>
-              <ValidatedInput
-                label="Branch"
-                type="text"
-                value={member.branch}
-                onChange={(value) => onInputChange('members', 'branch', value, index)}
-                placeholder="Enter branch (e.g., Computer Science)"
-                validationType="branch"
-              />
+              <div>
+                <CustomDropdown
+                  options={branchOptions}
+                  value={member.branch}
+                  onChange={(value) => onInputChange('members', 'branch', value, index)}
+                  label="Branch"
+                  placeholder="Select your branch"
+                />
+              </div>
             </div>
           </div>
         ))}

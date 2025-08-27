@@ -2,7 +2,8 @@
 import { motion } from 'framer-motion';
 import Slider from '@/components/ui/Slider';
 import ValidatedInput from '@/components/ui/ValidatedInput';
-import LockedInput from '@/components/ui/LockedInput';
+import CustomDropdown from '@/components/ui/CustomDropdown';
+import { branchOptions } from '@/data/branches';
 
 interface TeamLeaderData {
   name: string;
@@ -18,6 +19,8 @@ interface TeamLeaderProps {
   teamLeader: TeamLeaderData;
   onInputChange: (section: string, field: string, value: string) => void;
   isDataFromAuth?: boolean; // New prop to indicate if data is from authentication
+  emailError?: string;
+  phoneError?: string;
 }
 
 const yearOptions = [
@@ -33,7 +36,7 @@ const genderOptions = [
   { value: 'Other', label: 'Other' }
 ];
 
-export default function TeamLeader({ teamLeader, onInputChange, isDataFromAuth = false }: TeamLeaderProps) {
+export default function TeamLeader({ teamLeader, onInputChange, isDataFromAuth = false, emailError, phoneError }: TeamLeaderProps) {
   return (
     <div>
       {/* Info message when data is pre-filled */}
@@ -53,38 +56,25 @@ export default function TeamLeader({ teamLeader, onInputChange, isDataFromAuth =
       )}
       
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {isDataFromAuth && teamLeader.name ? (
-          <LockedInput
-            label="Full Name"
-            value={teamLeader.name}
-          />
-        ) : (
-          <ValidatedInput
-            label="Full Name"
-            type="text"
-            value={teamLeader.name}
-            onChange={(value) => onInputChange('teamLeader', 'name', value)}
-            placeholder="Enter full name"
-            required
-            validationType="name"
-          />
-        )}
-        {isDataFromAuth && teamLeader.email ? (
-          <LockedInput
-            label="Email"
-            value={teamLeader.email}
-          />
-        ) : (
-          <ValidatedInput
-            label="Email"
-            type="email"
-            value={teamLeader.email}
-            onChange={(value) => onInputChange('teamLeader', 'email', value)}
-            placeholder="Enter email address"
-            required
-            validationType="email"
-          />
-        )}
+        <ValidatedInput
+          label="Full Name"
+          type="text"
+          value={teamLeader.name}
+          onChange={(value) => onInputChange('teamLeader', 'name', value)}
+          placeholder="Enter full name"
+          required
+          validationType="name"
+        />
+        <ValidatedInput
+          label="Email"
+          type="email"
+          value={teamLeader.email}
+          onChange={(value) => onInputChange('teamLeader', 'email', value)}
+          placeholder="Enter email address"
+          required
+          validationType="email"
+          error={emailError}
+        />
         <ValidatedInput
           label="Phone"
           type="tel"
@@ -93,6 +83,7 @@ export default function TeamLeader({ teamLeader, onInputChange, isDataFromAuth =
           placeholder="Enter phone number"
           required
           validationType="phone"
+          error={phoneError}
         />
         <div>
           <Slider
@@ -102,15 +93,15 @@ export default function TeamLeader({ teamLeader, onInputChange, isDataFromAuth =
             label="Year of Study"
           />
         </div>
-        <ValidatedInput
-          label="Branch"
-          type="text"
-          value={teamLeader.branch}
-          onChange={(value) => onInputChange('teamLeader', 'branch', value)}
-          placeholder="Enter branch (e.g., Computer Science)"
-          required
-          validationType="branch"
-        />
+        <div>
+          <CustomDropdown
+            options={branchOptions}
+            value={teamLeader.branch}
+            onChange={(value) => onInputChange('teamLeader', 'branch', value)}
+            label="Branch"
+            placeholder="Select your branch"
+          />
+        </div>
         <div>
           <Slider
             options={genderOptions}

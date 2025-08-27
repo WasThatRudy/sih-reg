@@ -66,8 +66,7 @@ export default function CustomDropdown({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute z-[100] w-full mt-2 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl max-h-80 overflow-y-auto"
-            style={{ zIndex: 100 }}
+            className="absolute z-[9999] w-full mt-2 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl max-h-80 overflow-y-auto"
           >
             {options.map((option, index) => (
               <motion.button
@@ -97,7 +96,7 @@ export default function CustomDropdown({
       {/* Backdrop to close dropdown */}
       {isOpen && (
         <div 
-          className="fixed inset-0 z-[90]" 
+          className="fixed inset-0 z-[9998]" 
           onClick={() => setIsOpen(false)}
         />
       )}

@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyLeader } from "../../../lib/middleware/auth";
+import { verifyAuth } from "../../../lib/middleware/auth";
 import { Team } from "../../../models/Team";
 import { ProblemStatement } from "../../../models/ProblemStatement";
 import { User } from "../../../models/User";
@@ -11,7 +11,7 @@ import mongoose from "mongoose";
 export async function POST(request: NextRequest) {
   try {
     // Authenticate user
-    const authenticatedRequest = await verifyLeader(request);
+    const authenticatedRequest = await verifyAuth(request);
     const user = authenticatedRequest.user;
 
     if (!user) {
@@ -147,7 +147,7 @@ export async function POST(request: NextRequest) {
 export async function GET(request: NextRequest) {
   try {
     // Authenticate user
-    const authenticatedRequest = await verifyLeader(request);
+    const authenticatedRequest = await verifyAuth(request);
     const user = authenticatedRequest.user;
 
     if (!user) {

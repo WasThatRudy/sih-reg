@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdmin } from "../../../../lib/middleware/auth";
+import { verifyAdminAuth } from "../../../../lib/middleware/adminAuth";
 import { Team, ITeam } from "../../../../models/Team";
 import dbConnect from "../../../../lib/mongodb";
 
 export async function GET(request: NextRequest) {
   try {
     // Authenticate admin
-    await verifyAdmin(request);
+    await verifyAdminAuth(request);
 
     await dbConnect();
 
@@ -71,7 +71,7 @@ export async function GET(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     // Authenticate admin
-    await verifyAdmin(request);
+    await verifyAdminAuth(request);
 
     await dbConnect();
 

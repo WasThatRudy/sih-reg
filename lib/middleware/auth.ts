@@ -1,6 +1,5 @@
 import { NextRequest } from "next/server";
-import jwt from "jsonwebtoken";
-import { auth } from "../firebase-admin";
+import admin from "firebase-admin";
 import { User } from "../../models/User";
 import dbConnect from "../mongodb";
 
@@ -30,7 +29,9 @@ export async function verifyAuth(
 
     const token = authHeader.split(" ")[1];
 
-    if (!auth) {
+    // Get Firebase Admin Auth instance
+    const auth = admin.auth();
+    if (!auth || !admin.apps.length) {
       throw new Error("Firebase Admin not initialized");
     }
 
@@ -50,7 +51,7 @@ export async function verifyAuth(
       email: user.email,
       name: user.name,
       role: user.role,
-      firebaseUid: user.firebaseUid,
+      firebaseUid: user.firebaseUid || decodedToken.uid,
     };
 
     return authenticatedRequest;
@@ -59,7 +60,6 @@ export async function verifyAuth(
     throw new Error("Authentication failed");
   }
 }
-
 
 /**
  * Middleware to verify admin role
@@ -89,24 +89,4 @@ export async function verifyLeader(
   }
 
   return authenticatedRequest;
-}
-
-/**
- * Generate JWT token for internal use (optional, for additional security)
- */
-export function generateJWT(payload: object): string {
-  return jwt.sign(payload, process.env.JWT_SECRET!, {
-    expiresIn: "24h",
-  });
-}
-
-/**
- * Verify JWT token (optional, for additional security)
- */
-export function verifyJWT(token: string): object {
-  try {
-    return jwt.verify(token, process.env.JWT_SECRET!) as object;
-  } catch {
-    throw new Error("Invalid token");
-  }
 }

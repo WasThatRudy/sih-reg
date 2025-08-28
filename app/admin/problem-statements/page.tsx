@@ -2,7 +2,6 @@
 import { useState, useEffect, useRef } from 'react';
 import { motion } from 'framer-motion';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { useAuth } from '@/lib/context/AuthContext';
 
 interface ProblemStatement {
   _id: string;
@@ -18,7 +17,6 @@ interface ProblemStatement {
 }
 
 export default function ProblemStatementsManagement() {
-  const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [problemStatements, setProblemStatements] = useState<ProblemStatement[]>([]);
   const [loading, setLoading] = useState(true);
@@ -32,11 +30,14 @@ export default function ProblemStatementsManagement() {
   }, []);
 
   const fetchProblemStatements = async () => {
-    if (!user) return;
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
+      setLoading(false);
+      return;
+    }
     
     setLoading(true);
     try {
-      const token = await user.getIdToken();
       const response = await fetch('/api/admin/problem-statements', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -44,6 +45,8 @@ export default function ProblemStatementsManagement() {
       if (response.ok) {
         const data = await response.json();
         setProblemStatements(data.problemStatements || []);
+      } else {
+        console.error('Failed to fetch problem statements:', response.status);
       }
     } catch (error) {
       console.error('Error fetching problem statements:', error);
@@ -53,10 +56,10 @@ export default function ProblemStatementsManagement() {
   };
 
   const togglePSStatus = async (psId: string, currentStatus: boolean) => {
-    if (!user) return;
+    const token = localStorage.getItem('adminToken');
+    if (!token) return;
     
     try {
-      const token = await user.getIdToken();
       const response = await fetch('/api/admin/problem-statements', {
         method: 'PUT',
         headers: {
@@ -70,6 +73,8 @@ export default function ProblemStatementsManagement() {
         setProblemStatements(problemStatements.map(ps => 
           ps._id === psId ? { ...ps, isActive: !currentStatus } : ps
         ));
+      } else {
+        console.error('Failed to update problem statement status:', response.status);
       }
     } catch (error) {
       console.error('Error updating problem statement status:', error);
@@ -78,14 +83,14 @@ export default function ProblemStatementsManagement() {
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (!file || !user) return;
+    const token = localStorage.getItem('adminToken');
+    if (!file || !token) return;
 
     setUploading(true);
     try {
       const formData = new FormData();
       formData.append('file', file);
 
-      const token = await user.getIdToken();
       const response = await fetch('/api/admin/problem-statements', {
         method: 'POST',
         headers: {
@@ -114,10 +119,10 @@ export default function ProblemStatementsManagement() {
   };
 
   const downloadTemplate = async () => {
-    if (!user) return;
+    const token = localStorage.getItem('adminToken');
+    if (!token) return;
     
     try {
-      const token = await user.getIdToken();
       const response = await fetch('/api/admin/problem-statements/template', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -132,9 +137,13 @@ export default function ProblemStatementsManagement() {
         a.click();
         window.URL.revokeObjectURL(url);
         document.body.removeChild(a);
+      } else {
+        console.error('Failed to download template:', response.status);
+        alert('Failed to download template');
       }
     } catch (error) {
       console.error('Error downloading template:', error);
+      alert('Error downloading template');
     }
   };
 

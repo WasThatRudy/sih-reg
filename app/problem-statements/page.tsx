@@ -193,9 +193,10 @@ export default function ProblemStatements() {
                       {problem.psNumber}
                     </span>
                   </div>
-                  <div className="text-heading font-medium text-sm tracking-wide">
+                  {/* REMOVED: Team count is internal admin information - not for public view */}
+                  {/* <div className="text-heading font-medium text-sm tracking-wide">
                     {problem.teamCount}/{problem.maxTeams} teams
-                  </div>
+                  </div> */}
                 </div>
 
                 {/* Title */}
@@ -210,9 +211,11 @@ export default function ProblemStatements() {
 
                 {/* Footer */}
                 <div className="flex items-center justify-between pt-4 border-t border-gray-800">
-                  <span className="text-gray-500 text-sm font-body tracking-wide">
+                  {/* REMOVED: PS status (Active/Inactive) is internal admin information - not for public view */}
+                  {/* <span className="text-gray-500 text-sm font-body tracking-wide">
                     Status: {problem.isActive ? 'Active' : 'Inactive'}
-                  </span>
+                  </span> */}
+                  <div></div> {/* Spacer to maintain layout */}
                   {problem.link && (
                     <motion.a
                       href={problem.link}

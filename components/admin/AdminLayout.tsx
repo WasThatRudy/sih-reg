@@ -1,9 +1,8 @@
 'use client';
 import { useState } from 'react';
-import { motion } from 'framer-motion';
 import Link from 'next/link';
 import { useRouter, usePathname } from 'next/navigation';
-import { useAuth } from '@/lib/context/AuthContext';
+import { useAdminAuth } from '@/lib/context/AdminAuthContext';
 import AdminProtectedRoute from './AdminProtectedRoute';
 
 interface AdminLayoutProps {
@@ -11,7 +10,7 @@ interface AdminLayoutProps {
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
-  const { user, signOut } = useAuth();
+  const { admin, signOut } = useAdminAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -144,14 +143,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
               <div className="flex items-center">
                 <div className="w-8 h-8 bg-heading/20 rounded-full flex items-center justify-center">
                   <span className="text-sm font-medium text-heading">
-                    {user?.displayName?.charAt(0) || user?.email?.charAt(0) || 'A'}
+                    {admin?.email?.charAt(0)?.toUpperCase() || 'A'}
                   </span>
                 </div>
                 <div className="ml-3 flex-1">
                   <p className="text-sm font-medium text-white truncate">
-                    {user?.displayName || 'Admin'}
+                    Admin
                   </p>
-                  <p className="text-xs text-gray-400 truncate">{user?.email}</p>
+                  <p className="text-xs text-gray-400 truncate">{admin?.email}</p>
                 </div>
                 <button
                   onClick={handleSignOut}

@@ -1,8 +1,7 @@
 'use client';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { useAuth } from '@/lib/context/AuthContext';
 
 interface Team {
   _id: string;
@@ -12,7 +11,7 @@ interface Team {
     email: string;
     phone: string;
   };
-  members: any[];
+  members: unknown[];
   problemStatement: {
     psNumber: string;
     title: string;
@@ -22,7 +21,6 @@ interface Team {
 }
 
 export default function TeamsManagement() {
-  const { user } = useAuth();
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>('all');
@@ -38,16 +36,15 @@ export default function TeamsManagement() {
     finalist: 'bg-purple-500/20 text-purple-400 border-purple-500/30'
   };
 
-  useEffect(() => {
-    fetchTeams();
-  }, [currentPage, filter, searchTerm]);
-
-  const fetchTeams = async () => {
-    if (!user) return;
+  const fetchTeams = useCallback(async () => {
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
+      setLoading(false);
+      return;
+    }
     
     setLoading(true);
     try {
-      const token = await user.getIdToken();
       const queryParams = new URLSearchParams({
         page: currentPage.toString(),
         limit: '10',
@@ -63,20 +60,26 @@ export default function TeamsManagement() {
         const data = await response.json();
         setTeams(data.teams || []);
         setTotalPages(Math.ceil((data.total || 0) / 10));
+      } else {
+        console.error('Failed to fetch teams:', response.status);
       }
     } catch (error) {
       console.error('Error fetching teams:', error);
     } finally {
       setLoading(false);
     }
-  };
+  }, [currentPage, filter, searchTerm]);
+
+  useEffect(() => {
+    fetchTeams();
+  }, [fetchTeams]);
 
   const updateTeamStatus = async (teamId: string, newStatus: string) => {
-    if (!user) return;
+    const token = localStorage.getItem('adminToken');
+    if (!token) return;
     
     setUpdating(teamId);
     try {
-      const token = await user.getIdToken();
       const response = await fetch('/api/admin/teams', {
         method: 'PUT',
         headers: {
@@ -88,8 +91,10 @@ export default function TeamsManagement() {
 
       if (response.ok) {
         setTeams(teams.map(team => 
-          team._id === teamId ? { ...team, status: newStatus as any } : team
+          team._id === teamId ? { ...team, status: newStatus as Team['status'] } : team
         ));
+      } else {
+        console.error('Failed to update team status:', response.status);
       }
     } catch (error) {
       console.error('Error updating team status:', error);

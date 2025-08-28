@@ -7,7 +7,6 @@ import ValidatedInput from '@/components/ui/ValidatedInput';
 export default function AdminSignup() {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    name: '',
     email: '',
     password: '',
     confirmPassword: '',
@@ -26,16 +25,12 @@ export default function AdminSignup() {
   const validateForm = () => {
     const newErrors: { [key: string]: string } = {};
 
-    if (!formData.name) {
-      newErrors.name = 'Name is required';
-    } else if (formData.name.length < 2) {
-      newErrors.name = 'Name must be at least 2 characters long';
-    }
-
     if (!formData.email) {
       newErrors.email = 'Email is required';
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
       newErrors.email = 'Please enter a valid email address';
+    } else if (!formData.email.toLowerCase().endsWith('@pointblank.club')) {
+      newErrors.email = 'Admin registration is only allowed for @pointblank.club email addresses';
     }
 
     if (!formData.password) {
@@ -63,13 +58,12 @@ export default function AdminSignup() {
 
     setLoading(true);
     try {
-      const response = await fetch('/api/auth/admin-register', {
+      const response = await fetch('/api/admin/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: formData.name,
           email: formData.email,
           password: formData.password,
           adminSecretKey: formData.adminSecretKey
@@ -125,26 +119,18 @@ export default function AdminSignup() {
           {/* Admin Signup Form */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <ValidatedInput
-              label="Full Name"
-              type="text"
-              value={formData.name}
-              onChange={(value) => handleInputChange('name', value)}
-              placeholder="Enter your full name"
-              required
-              validationType="name"
-              error={errors.name}
-            />
-
-            <ValidatedInput
               label="Admin Email"
               type="email"
               value={formData.email}
               onChange={(value) => handleInputChange('email', value)}
-              placeholder="Enter your admin email"
+              placeholder="admin@pointblank.club"
               required
               validationType="email"
               error={errors.email}
             />
+            <p className="text-sm text-gray-400 -mt-4 mb-2">
+              ⚠️ Only @pointblank.club email addresses can register as admin
+            </p>
 
             <ValidatedInput
               label="Password"

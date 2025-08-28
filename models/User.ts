@@ -1,4 +1,5 @@
 import mongoose, { Document, Schema, Model } from "mongoose";
+import bcrypt from "bcrypt";
 
 // User Interface
 export interface IUser extends Document {
@@ -6,14 +7,22 @@ export interface IUser extends Document {
   email: string;
   name: string;
   role: "leader" | "admin";
-  firebaseUid: string;
+  firebaseUid?: string; // Optional for admin users
+  passwordHash?: string; // Only for admin users
   team?: string; // Reference to Team document
   createdAt: Date;
   updatedAt: Date;
 }
 
+// Extend interface for methods
+export interface IUserMethods {
+  comparePassword(password: string): Promise<boolean>;
+}
+
+export interface IUserModel extends Model<IUser, {}, IUserMethods> {}
+
 // User Schema
-const userSchema = new Schema<IUser>(
+const userSchema = new Schema<IUser, IUserModel, IUserMethods>(
   {
     email: {
       type: String,
@@ -35,8 +44,17 @@ const userSchema = new Schema<IUser>(
     },
     firebaseUid: {
       type: String,
-      required: true,
+      required: function(this: IUser) {
+        return this.role === "leader"; // Required only for team leaders
+      },
       unique: true,
+      sparse: true, // Allows null values while maintaining uniqueness
+    },
+    passwordHash: {
+      type: String,
+      required: function(this: IUser) {
+        return this.role === "admin"; // Required only for admin users
+      },
     },
     team: {
       type: Schema.Types.ObjectId,
@@ -49,5 +67,13 @@ const userSchema = new Schema<IUser>(
   }
 );
 
-export const User: Model<IUser> =
-  mongoose.models.User || mongoose.model<IUser>("User", userSchema);
+// Add method to compare passwords for admin users
+userSchema.methods.comparePassword = async function(password: string): Promise<boolean> {
+  if (!this.passwordHash) {
+    return false;
+  }
+  return bcrypt.compare(password, this.passwordHash);
+};
+
+export const User: IUserModel =
+  mongoose.models.User || mongoose.model<IUser, IUserModel>("User", userSchema);

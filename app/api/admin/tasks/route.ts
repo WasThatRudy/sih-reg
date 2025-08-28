@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyAdmin } from "../../../../lib/middleware/auth";
+import { verifyAdminAuth } from "../../../../lib/middleware/adminAuth";
 import { Task, ITask } from "../../../../models/Task";
 import { Team } from "../../../../models/Team";
 import dbConnect from "../../../../lib/mongodb";
@@ -18,7 +18,7 @@ interface PopulatedTeam {
 export async function GET(request: NextRequest) {
   try {
     // Authenticate admin
-    await verifyAdmin(request);
+    await verifyAdminAuth(request);
 
     await dbConnect();
 
@@ -54,8 +54,8 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     // Authenticate admin
-    const authenticatedRequest = await verifyAdmin(request);
-    const adminUser = authenticatedRequest.user;
+    const authenticatedRequest = await verifyAdminAuth(request);
+    const adminUser = authenticatedRequest.admin;
 
     if (!adminUser) {
       return NextResponse.json(
@@ -176,7 +176,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     // Authenticate admin
-    await verifyAdmin(request);
+    await verifyAdminAuth(request);
 
     await dbConnect();
 

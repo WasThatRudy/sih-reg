@@ -1,10 +1,10 @@
 'use client';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import AdminLayout from '@/components/admin/AdminLayout';
 import StatsCard from '@/components/admin/StatsCard';
-import { useAuth } from '@/lib/context/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useAdminAuth } from '@/lib/context/AdminAuthContext';
 
 interface DashboardStats {
   totalTeams: number;
@@ -18,24 +18,19 @@ interface DashboardStats {
 }
 
 export default function AdminDashboard() {
-  const { user, loading } = useAuth();
+  const { admin } = useAdminAuth();
   const router = useRouter();
   const [stats, setStats] = useState<DashboardStats | null>(null);
   const [statsLoading, setStatsLoading] = useState(true);
 
-  // Check if user is admin (this should be enhanced with proper role checking)
-  useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
-    }
-  }, [user, loading, router]);
-
   useEffect(() => {
     const fetchStats = async () => {
-      if (!user) return;
-      
       try {
-        const token = await user.getIdToken();
+        const token = localStorage.getItem('adminToken');
+        if (!token) {
+          setStatsLoading(false);
+          return;
+        }
         
         // Fetch teams stats
         const teamsResponse = await fetch('/api/admin/teams', {
@@ -65,13 +60,19 @@ export default function AdminDashboard() {
 
           setStats({
             totalTeams: teamStats.length,
-            registeredTeams: teamStats.filter((t: any) => t.status === 'registered').length,
-            selectedTeams: teamStats.filter((t: any) => t.status === 'selected').length,
-            finalistTeams: teamStats.filter((t: any) => t.status === 'finalist').length,
+            registeredTeams: teamStats.filter((t: { status: string }) => t.status === 'registered').length,
+            selectedTeams: teamStats.filter((t: { status: string }) => t.status === 'selected').length,
+            finalistTeams: teamStats.filter((t: { status: string }) => t.status === 'finalist').length,
             totalProblemStatements: psStats.length,
-            activeProblemStatements: psStats.filter((ps: any) => ps.isActive).length,
+            activeProblemStatements: psStats.filter((ps: { isActive: boolean }) => ps.isActive).length,
             totalTasks: taskStats.length,
-            activeTasks: taskStats.filter((t: any) => t.isActive).length,
+            activeTasks: taskStats.filter((t: { isActive: boolean }) => t.isActive).length,
+          });
+        } else {
+          console.error('One or more API calls failed:', { 
+            teams: teamsResponse.status, 
+            ps: psResponse.status, 
+            tasks: tasksResponse.status 
           });
         }
       } catch (error) {
@@ -82,18 +83,9 @@ export default function AdminDashboard() {
     };
 
     fetchStats();
-  }, [user]);
+  }, []);
 
-  if (loading || !user) {
-    return (
-      <div className="min-h-screen bg-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-heading mx-auto mb-4"></div>
-          <p className="text-text font-body">Loading admin dashboard...</p>
-        </div>
-      </div>
-    );
-  }
+  // This is now wrapped with AdminProtectedRoute in AdminLayout
 
   return (
     <AdminLayout>
@@ -106,7 +98,7 @@ export default function AdminDashboard() {
           </div>
           <div className="text-right">
             <p className="text-sm text-gray-400 font-body">Welcome back,</p>
-            <p className="text-heading font-medium">{user.displayName || user.email}</p>
+            <p className="text-heading font-medium">{admin?.email}</p>
           </div>
         </div>
 

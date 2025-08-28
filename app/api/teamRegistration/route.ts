@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "../../../lib/middleware/auth";
+import { verifyAdminAuth } from "../../../lib/middleware/adminAuth";
 import { Team } from "../../../models/Team";
 import { ProblemStatement } from "../../../models/ProblemStatement";
 import { User } from "../../../models/User";
@@ -10,7 +11,27 @@ import mongoose from "mongoose";
 
 export async function POST(request: NextRequest) {
   try {
-    // Authenticate user
+    await dbConnect();
+
+    // Check if user is currently logged in as admin
+    try {
+      const adminRequest = await verifyAdminAuth(request);
+      if (adminRequest.admin) {
+        return NextResponse.json(
+          { 
+            success: false, 
+            error: "Please logout as admin first to register as a team member",
+            isAdmin: true,
+            adminEmail: adminRequest.admin.email
+          },
+          { status: 403 }
+        );
+      }
+    } catch {
+      // Not logged in as admin, continue with normal flow
+    }
+
+    // Authenticate user with Firebase (for team registration)
     const authenticatedRequest = await verifyAuth(request);
     const user = authenticatedRequest.user;
 
@@ -44,7 +65,7 @@ export async function POST(request: NextRequest) {
 
     if (!validation.isValid) {
       return NextResponse.json(
-        { success: false, errors: validation.errors },
+        { success: false, errors: validation.errors, error: "Validation failed" },
         { status: 400 }
       );
     }
@@ -138,7 +159,11 @@ export async function POST(request: NextRequest) {
     console.error("Team registration error:", error);
 
     return NextResponse.json(
-      { success: false, error: "Failed to register team" },
+      { 
+        success: false, 
+        error: "Failed to register team",
+        details: error instanceof Error ? error.message : 'Unknown error'
+      },
       { status: 500 }
     );
   }

@@ -2,7 +2,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import AdminLayout from '@/components/admin/AdminLayout';
-import { useAuth } from '@/lib/context/AuthContext';
 
 interface Task {
   _id: string;
@@ -31,7 +30,7 @@ interface Team {
 }
 
 export default function TasksManagement() {
-  const { user } = useAuth();
+  // Remove unused admin variable
   const [tasks, setTasks] = useState<Task[]>([]);
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
@@ -52,10 +51,13 @@ export default function TasksManagement() {
   }, []);
 
   const fetchTasks = async () => {
-    if (!user) return;
+    const token = localStorage.getItem('adminToken');
+    if (!token) {
+      setLoading(false);
+      return;
+    }
     
     try {
-      const token = await user.getIdToken();
       const response = await fetch('/api/admin/tasks', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -63,6 +65,8 @@ export default function TasksManagement() {
       if (response.ok) {
         const data = await response.json();
         setTasks(data.tasks || []);
+      } else {
+        console.error('Failed to fetch tasks:', response.status);
       }
     } catch (error) {
       console.error('Error fetching tasks:', error);
@@ -72,10 +76,10 @@ export default function TasksManagement() {
   };
 
   const fetchTeams = async () => {
-    if (!user) return;
+    const token = localStorage.getItem('adminToken');
+    if (!token) return;
     
     try {
-      const token = await user.getIdToken();
       const response = await fetch('/api/admin/teams', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -83,6 +87,8 @@ export default function TasksManagement() {
       if (response.ok) {
         const data = await response.json();
         setTeams(data.teams || []);
+      } else {
+        console.error('Failed to fetch teams:', response.status);
       }
     } catch (error) {
       console.error('Error fetching teams:', error);
@@ -111,11 +117,11 @@ export default function TasksManagement() {
   };
 
   const createTask = async () => {
-    if (!user || !newTask.title.trim()) return;
+    const token = localStorage.getItem('adminToken');
+    if (!token || !newTask.title.trim()) return;
     
     setSubmitting(true);
     try {
-      const token = await user.getIdToken();
       const response = await fetch('/api/admin/tasks', {
         method: 'POST',
         headers: {
@@ -149,10 +155,10 @@ export default function TasksManagement() {
   };
 
   const toggleTaskStatus = async (taskId: string, currentStatus: boolean) => {
-    if (!user) return;
+    const token = localStorage.getItem('adminToken');
+    if (!token) return;
     
     try {
-      const token = await user.getIdToken();
       const response = await fetch('/api/admin/tasks', {
         method: 'PUT',
         headers: {
@@ -166,6 +172,8 @@ export default function TasksManagement() {
         setTasks(tasks.map(task => 
           task._id === taskId ? { ...task, isActive: !currentStatus } : task
         ));
+      } else {
+        console.error('Failed to update task status:', response.status);
       }
     } catch (error) {
       console.error('Error updating task status:', error);
@@ -388,7 +396,7 @@ export default function TasksManagement() {
                             />
                             <select
                               value={field.type}
-                              onChange={(e) => updateField(index, { type: e.target.value as any })}
+                              onChange={(e) => updateField(index, { type: e.target.value as TaskField['type'] })}
                               className="px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-heading"
                             >
                               <option value="text">Text</option>

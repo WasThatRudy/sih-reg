@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/lib/context/AuthContext';
+import StatusBanner from './StatusBanner';
 
 export default function Hero() {
   const { user, hasTeam } = useAuth();
@@ -86,40 +87,13 @@ export default function Hero() {
         </motion.h1>
 
 
-        {/* CTA Buttons with enhanced styling */}
-        <motion.div 
-          className="flex flex-col sm:flex-row gap-8 justify-center items-center"
-          initial={{ opacity: 0, y: 30 }}
+        <motion.div
+          initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 1.1, ease: "easeOut" }}
+          transition={{ duration: 0.8, delay: 0.3 }}
+          className="max-w-6xl mx-auto px-6 text-left mt-20"
         >
-          <Link href={getStartedLink()}>
-            <motion.button 
-              className="group relative px-10 py-5 bg-heading text-white rounded-full font-medium overflow-hidden tracking-wide"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
-            >
-              <motion.div
-                className="absolute inset-0 bg-white/20"
-                initial={{ x: "-100%" }}
-                whileHover={{ x: "100%" }}
-                transition={{ duration: 0.6 }}
-              />
-              <span className="relative font-body">{getStartedText()}</span>
-            </motion.button>
-          </Link>
-          
-          <Link href="/problem-statements">
-            <motion.button 
-              className="group relative px-10 py-5 border-2 border-subheading text-subheading rounded-full font-medium overflow-hidden tracking-wide hover:bg-subheading hover:text-white transition-colors duration-300"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
-            >
-              <span className="relative font-body">View Problems</span>
-            </motion.button>
-          </Link>
+          <StatusBanner />
         </motion.div>
       </div>
 

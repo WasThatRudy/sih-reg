@@ -20,116 +20,6 @@ const itemVariants = {
 };
 
 export default function Winners() {
-  const { user, hasTeam } = useAuth();
-
-  const getActionButton = () => {
-    if (!user) {
-      return (
-        <div className="text-center mt-16">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-          >
-            <p className="text-gray-400 mb-6 font-body">
-              Ready to be the next winner?
-            </p>
-            <Link href="/signup">
-              <motion.button 
-                className="group relative px-8 py-4 bg-gradient-to-r from-heading to-subheading text-white rounded-full font-medium overflow-hidden tracking-wide"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
-                <span className="relative font-body flex items-center gap-2">
-                  Join the Challenge
-                  <motion.svg 
-                    className="w-4 h-4" 
-                    fill="none" 
-                    stroke="currentColor" 
-                    viewBox="0 0 24 24"
-                    initial={{ x: 0 }}
-                    whileHover={{ x: 5 }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                  </motion.svg>
-                </span>
-              </motion.button>
-            </Link>
-          </motion.div>
-        </div>
-      );
-    }
-
-    if (hasTeam) {
-      return (
-        <div className="text-center mt-16">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.8 }}
-          >
-            <p className="text-green-400 mb-6 font-body">
-              Your team is ready to compete! 🚀
-            </p>
-            <Link href="/team-info">
-              <motion.button 
-                className="group relative px-8 py-4 bg-green-600 text-white rounded-full font-medium overflow-hidden tracking-wide hover:bg-green-500 transition-colors duration-300"
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
-                <span className="relative font-body">
-                  View Team Status
-                </span>
-              </motion.button>
-            </Link>
-          </motion.div>
-        </div>
-      );
-    }
-
-    return (
-      <div className="text-center mt-16">
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ duration: 0.8 }}
-        >
-          <p className="text-orange-400 mb-6 font-body">
-            Complete your registration to compete!
-          </p>
-          <Link href="/registration">
-            <motion.button 
-              className="group relative px-8 py-4 bg-orange-600 text-white rounded-full font-medium overflow-hidden tracking-wide hover:bg-orange-500 transition-colors duration-300"
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 400, damping: 17 }}
-            >
-              <span className="relative font-body flex items-center gap-2">
-                Register Your Team
-                <motion.svg 
-                  className="w-4 h-4" 
-                  fill="none" 
-                  stroke="currentColor" 
-                  viewBox="0 0 24 24"
-                  initial={{ x: 0 }}
-                  whileHover={{ x: 5 }}
-                  transition={{ duration: 0.3 }}
-                >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-                </motion.svg>
-              </span>
-            </motion.button>
-          </Link>
-        </motion.div>
-      </div>
-    );
-  };
   return (
     <section className="py-24 px-6 bg-background">
       <div className="max-w-7xl mx-auto">
@@ -245,9 +135,6 @@ export default function Winners() {
             </motion.div>
           ))}
         </motion.div>
-
-        {/* Action Button */}
-        {getActionButton()}
       </div>
     </section>
   );

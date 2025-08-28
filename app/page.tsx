@@ -12,13 +12,8 @@ export default function Home() {
     <div className="min-h-screen bg-background text-foreground">
       <Navbar />
       <Hero />
-      <div className="max-w-6xl mx-auto px-6">
-        <StatusBanner />
-      </div>
-      <QuickLinks />
       <Winners />
       <CallToAction />
-      <FloatingActionButton />
       <BackToTop />
     </div>
   );

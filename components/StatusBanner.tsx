@@ -37,7 +37,7 @@ export default function StatusBanner() {
             </Link>
             <Link href="/signup">
               <motion.button 
-                className="px-6 py-2 bg-subheading text-white rounded-full text-sm font-medium hover:bg-subheading/80 transition-colors duration-300"
+                className="px-6 py-2 bg-subheading text-gray-800 rounded-full text-sm font-medium hover:bg-subheading/80 transition-colors duration-300"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >

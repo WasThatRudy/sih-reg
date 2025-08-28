@@ -1,8 +1,23 @@
 'use client';
 import { motion } from 'framer-motion';
 import Image from 'next/image';
+import Link from 'next/link';
+import { useAuth } from '@/lib/context/AuthContext';
 
 export default function Hero() {
+  const { user, hasTeam } = useAuth();
+
+  const getStartedLink = () => {
+    if (!user) return '/login';
+    if (hasTeam) return '/team-info';
+    return '/registration';
+  };
+
+  const getStartedText = () => {
+    if (!user) return 'Login to Start';
+    if (hasTeam) return 'View Team Info';
+    return 'Register Team';
+  };
   return (
     <section className="relative min-h-screen flex items-center justify-center bg-background overflow-hidden">
       {/* Animated background elements */}
@@ -47,7 +62,7 @@ export default function Hero() {
 
         {/* Main heading with sophisticated typography */}
         <motion.h1 
-          className="font-display text-5xl md:text-7xl mb-20 lg:text-8xl font-light mb-8 leading-[0.9] tracking-tight"
+          className="font-display text-5xl md:text-7xl lg:text-8xl font-light mb-8 leading-[0.9] tracking-tight"
           initial={{ opacity: 0, y: 50 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
@@ -78,20 +93,33 @@ export default function Hero() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 1.1, ease: "easeOut" }}
         >
-          <motion.button 
-            className="group relative px-10 py-5 bg-heading text-white rounded-full font-medium overflow-hidden tracking-wide"
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            transition={{ type: "spring", stiffness: 400, damping: 17 }}
-          >
-            <motion.div
-              className="absolute inset-0 bg-white/20"
-              initial={{ x: "-100%" }}
-              whileHover={{ x: "100%" }}
-              transition={{ duration: 0.6 }}
-            />
-            <span className="relative font-body">Get Started</span>
-          </motion.button>
+          <Link href={getStartedLink()}>
+            <motion.button 
+              className="group relative px-10 py-5 bg-heading text-white rounded-full font-medium overflow-hidden tracking-wide"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+            >
+              <motion.div
+                className="absolute inset-0 bg-white/20"
+                initial={{ x: "-100%" }}
+                whileHover={{ x: "100%" }}
+                transition={{ duration: 0.6 }}
+              />
+              <span className="relative font-body">{getStartedText()}</span>
+            </motion.button>
+          </Link>
+          
+          <Link href="/problem-statements">
+            <motion.button 
+              className="group relative px-10 py-5 border-2 border-subheading text-subheading rounded-full font-medium overflow-hidden tracking-wide hover:bg-subheading hover:text-white transition-colors duration-300"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+            >
+              <span className="relative font-body">View Problems</span>
+            </motion.button>
+          </Link>
         </motion.div>
       </div>
 

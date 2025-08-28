@@ -1,7 +1,22 @@
 'use client';
 import { motion } from 'framer-motion';
+import Link from 'next/link';
+import { useAuth } from '@/lib/context/AuthContext';
 
 export default function CallToAction() {
+  const { user, hasTeam } = useAuth();
+
+  const getJourneyLink = () => {
+    if (!user) return '/login';
+    if (hasTeam) return '/team-info';
+    return '/registration';
+  };
+
+  const getJourneyText = () => {
+    if (!user) return 'Start Your Journey';
+    if (hasTeam) return 'Continue Journey';
+    return 'Join the Challenge';
+  };
   return (
     <section className="py-24 px-6 bg-background relative overflow-hidden">
       {/* Background Elements */}
@@ -51,33 +66,35 @@ export default function CallToAction() {
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.6 }}
         >
-          <motion.button 
-            className="group relative px-12 py-5 bg-gradient-to-r from-heading to-heading/80 text-white rounded-full text-lg font-medium overflow-hidden shadow-2xl tracking-wide"
-            whileHover={{ scale: 1.05, y: -2 }}
-            whileTap={{ scale: 0.95 }}
-            transition={{ type: "spring", stiffness: 400, damping: 17 }}
-          >
-            <motion.div
-              className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0"
-              initial={{ x: "-100%" }}
-              whileHover={{ x: "100%" }}
-              transition={{ duration: 0.8 }}
-            />
-            <span className="relative flex items-center justify-center gap-3 font-body">
-              Start Your Journey
-              <motion.svg 
-                className="w-5 h-5" 
-                fill="none" 
-                stroke="currentColor" 
-                viewBox="0 0 24 24"
-                initial={{ x: 0 }}
-                whileHover={{ x: 5 }}
-                transition={{ duration: 0.3 }}
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
-              </motion.svg>
-            </span>
-          </motion.button>
+          <Link href={getJourneyLink()}>
+            <motion.button 
+              className="group relative px-12 py-5 bg-gradient-to-r from-heading to-heading/80 text-white rounded-full text-lg font-medium overflow-hidden shadow-2xl tracking-wide"
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+            >
+              <motion.div
+                className="absolute inset-0 bg-gradient-to-r from-white/0 via-white/20 to-white/0"
+                initial={{ x: "-100%" }}
+                whileHover={{ x: "100%" }}
+                transition={{ duration: 0.8 }}
+              />
+              <span className="relative flex items-center justify-center gap-3 font-body">
+                {getJourneyText()}
+                <motion.svg 
+                  className="w-5 h-5" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
+                  initial={{ x: 0 }}
+                  whileHover={{ x: 5 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                </motion.svg>
+              </span>
+            </motion.button>
+          </Link>
         </motion.div>
 
         {/* Additional Info */}

@@ -49,9 +49,5 @@ const userSchema = new Schema<IUser>(
   }
 );
 
-// Create indexes for better performance
-userSchema.index({ email: 1 });
-userSchema.index({ firebaseUid: 1 });
-
 export const User: Model<IUser> =
   mongoose.models.User || mongoose.model<IUser>("User", userSchema);

@@ -63,10 +63,6 @@ const problemStatementSchema = new Schema<IProblemStatement>(
   }
 );
 
-// Create indexes for better performance
-problemStatementSchema.index({ psNumber: 1 });
-problemStatementSchema.index({ isActive: 1, teamCount: 1 });
-
 export const ProblemStatement: Model<IProblemStatement> =
   mongoose.models.ProblemStatement ||
   mongoose.model<IProblemStatement>("ProblemStatement", problemStatementSchema);

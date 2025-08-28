@@ -173,11 +173,5 @@ teamSchema.pre("save", function (next) {
   next();
 });
 
-// Create indexes for better performance
-teamSchema.index({ teamName: 1 });
-teamSchema.index({ leader: 1 });
-teamSchema.index({ problemStatement: 1 });
-teamSchema.index({ status: 1 });
-
 export const Team: Model<ITeam> =
   mongoose.models.Team || mongoose.model<ITeam>("Team", teamSchema);

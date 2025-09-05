@@ -110,30 +110,24 @@ export default function Winners() {
           ))}
         </motion.div>
 
-        {/* Statistics */}
+        {/* More Winners Indication */}
         <motion.div 
-          className="grid grid-cols-2 md:grid-cols-4 gap-8"
-          initial={{ opacity: 0, y: 30 }}
+          className="text-center mb-16"
+          initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
-          transition={{ duration: 0.8, delay: 0.2 }}
+          transition={{ duration: 0.8, delay: 0.6 }}
         >
-          {statistics.map((stat, index) => (
-            <motion.div 
-              key={index}
-              className="text-center group"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ duration: 0.8, delay: 0.1 * index }}
-              whileHover={{ y: -5 }}
-            >
-              <div className={`font-display text-3xl md:text-4xl font-light text-${stat.color} mb-3 group-hover:scale-110 transition-transform duration-300 tracking-tight`}>
-                {stat.number}
-              </div>
-              <div className="font-body text-gray-400 text-sm font-light tracking-wide">{stat.label}</div>
-            </motion.div>
-          ))}
+          <div className="inline-flex items-center px-6 py-3 bg-gray-900/50 border border-gray-800 rounded-full">
+            <span className="text-gray-400 text-sm font-light tracking-wide mr-3">
+              And many more winners across different years...
+            </span>
+            <div className="flex space-x-1">
+              <div className="w-1.5 h-1.5 bg-heading/60 rounded-full animate-pulse"></div>
+              <div className="w-1.5 h-1.5 bg-heading/40 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+              <div className="w-1.5 h-1.5 bg-heading/20 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
+            </div>
+          </div>
         </motion.div>
       </div>
     </section>

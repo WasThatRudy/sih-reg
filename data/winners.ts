@@ -52,7 +52,7 @@ export const winners: Winner[] = [
     year: "2022",
     category: "Software",
     teamName: "HUM BHI BANA LENGE",
-    projectTitle: "Unknown",
+    projectTitle: "LegalEye: AI based legal assistant",
     members: ["Dinesh A", "Vinit Hanabar", "Prince Thakkar", "Janvi Kumar", "Ishika Jain", "Dheeraj Gajuta"],
     achievement: "Winner - SIH 2022"
   },

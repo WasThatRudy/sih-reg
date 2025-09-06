@@ -55,7 +55,7 @@ export default function Winners() {
 
         {/* Winners Grid */}
         <motion.div 
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-20"
+          className="flex flex-wrap justify-center gap-8 mb-20"
           variants={containerVariants}
           initial="hidden"
           whileInView="visible"
@@ -64,7 +64,7 @@ export default function Winners() {
           {winners.map((winner, index) => (
             <motion.div 
               key={index}
-              className="group relative bg-gray-900/30 border border-gray-800 rounded-2xl p-8 hover:border-heading/30 transition-all duration-500"
+              className="group relative bg-gray-900/30 border border-gray-800 rounded-2xl p-8 hover:border-heading/30 transition-all duration-500 w-full md:w-[calc(50%-1rem)] lg:w-[calc(33.333%-1.33rem)] max-w-sm"
               variants={itemVariants}
               whileHover={{ y: -8, scale: 1.02 }}
               transition={{ type: "spring", stiffness: 300, damping: 20 }}

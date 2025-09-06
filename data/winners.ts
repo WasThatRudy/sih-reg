@@ -26,7 +26,7 @@ export const winners: Winner[] = [
   },
   {
     year: "2024",
-    category: "Hardware",
+    category: "Software",
     teamName: "Radar Vision",
     projectTitle: "Micro-Doppler Based Target Classification - SIH1606",
     members: ["Inchara J", "Shravya H Jain", "Diptangshu Bej", "Anand Raut", "Chethan Anathahalli Cheluvaraja", "Likith Manjunatha"],
@@ -46,6 +46,14 @@ export const winners: Winner[] = [
     teamName: "Cheatcodes Inc.",
     projectTitle: "Misinformation Flagging System",
     members: ["Kritik Modi", "Ritabrata Nag", "Shubham Shresth", "Pururaj Singh Rajput", "Shreya N", "Sooraj Kumar"],
+    achievement: "Winner - SIH 2022"
+  },
+  {
+    year: "2022",
+    category: "Software",
+    teamName: "HUM BHI BANA LENGE",
+    projectTitle: "Unknown",
+    members: ["Dinesh A", "Vinit Hanabar", "Prince Thakkar", "Janvi Kumar", "Ishika Jain", "Dheeraj Gajuta"],
     achievement: "Winner - SIH 2022"
   },
   {

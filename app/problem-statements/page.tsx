@@ -183,9 +183,13 @@ export default function ProblemStatements() {
                     ))}
                   </div>
                   {problem.link && (
-                    <span className="bg-blue-500/10 text-blue-400 px-3 py-1 rounded-full text-sm font-medium border border-blue-500/20 tracking-wide">
-                      {problem.link}
-                    </span>
+                    <div className="flex flex-wrap gap-1">
+                      {problem.link.split('/').map((part, index) => (
+                        <span key={index} className="bg-blue-500/10 text-blue-400 px-2 py-1 rounded-full text-xs font-medium border border-blue-500/20 tracking-wide">
+                          {part}
+                        </span>
+                      ))}
+                    </div>
                   )}
                 </div>
 
@@ -252,9 +256,13 @@ export default function ProblemStatements() {
                       ))}
                     </div>
                     {selectedProblem.link && (
-                      <span className="bg-blue-500/10 text-blue-400 px-3 py-1 rounded-full text-sm font-medium border border-blue-500/20 tracking-wide">
-                        {selectedProblem.link}
-                      </span>
+                      <div className="flex flex-wrap gap-1">
+                        {selectedProblem.link.split('/').map((part, index) => (
+                          <span key={index} className="bg-blue-500/10 text-blue-400 px-2 py-1 rounded-full text-xs font-medium border border-blue-500/20 tracking-wide">
+                            {part}
+                          </span>
+                        ))}
+                      </div>
                     )}
                   </div>
                   <motion.button

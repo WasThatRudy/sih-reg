@@ -17,6 +17,7 @@ interface AuthContextType {
   loading: boolean;
   hasTeam: boolean;
   isAdmin: boolean;
+  userRole: string | null;
   signIn: (email: string, password: string) => Promise<void>;
   signUp: (email: string, password: string, displayName: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
@@ -43,6 +44,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
   const [loading, setLoading] = useState(true);
   const [hasTeam, setHasTeam] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
+  const [userRole, setUserRole] = useState<string | null>(null);
 
   // Function to check team registration status
   const refreshTeamStatus = async () => {
@@ -95,9 +97,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           // Check admin role
           if (userResponse.ok) {
             const userData = await userResponse.json();
-            setIsAdmin(userData.user?.role === 'admin');
+            const role = userData.user?.role;
+            setIsAdmin(role === 'admin');
+            setUserRole(role === 'admin' ? 'admin' : 'leader');
           } else {
             setIsAdmin(false);
+            setUserRole(null);
           }
           
           // Check team status
@@ -111,10 +116,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           console.error('Error checking user status:', error);
           setHasTeam(false);
           setIsAdmin(false);
+          setUserRole(null);
         }
       } else {
         setHasTeam(false);
         setIsAdmin(false);
+        setUserRole(null);
       }
     });
 
@@ -190,6 +197,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     loading,
     hasTeam,
     isAdmin,
+    userRole,
     signIn,
     signUp,
     signInWithGoogle,

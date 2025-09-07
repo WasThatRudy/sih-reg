@@ -3,8 +3,9 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import EditLeaderProfileModal, { LeaderProfileData } from "@/components/EditLeaderProfileModal";
 import { useAuth } from "@/lib/context/AuthContext";
-import { ExternalLink, FileText, Download, MessageCircle, Calendar, MapPin } from "lucide-react";
+import { ExternalLink, FileText, Download, MessageCircle, Calendar, MapPin, Edit3, AlertCircle } from "lucide-react";
 
 interface TeamMember {
   name: string;
@@ -34,6 +35,7 @@ interface Team {
     branch: string;
     year: string;
     gender: string;
+    college: string;
   };
   members: TeamMember[];
   problemStatement: ProblemStatement;
@@ -45,6 +47,22 @@ export default function TeamInfo() {
   const { user } = useAuth();
   const [team, setTeam] = useState<Team | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+
+  const checkLeaderProfileCompleteness = (leader: Team['leader']) => {
+    if (!leader) return false;
+    const requiredFields: (keyof NonNullable<Team['leader']>)[] = ['phone', 'gender', 'college', 'year', 'branch'];
+    return requiredFields.every(field => leader[field]);
+  };
+
+  const isProfileComplete = team?.leader ? checkLeaderProfileCompleteness(team.leader) : true;
+  const [profileStatus, setProfileStatus] = useState<{
+    isComplete: boolean;
+    missingFields: string[];
+  }>({
+    isComplete: true,
+    missingFields: []
+  });
 
   useEffect(() => {
     const fetchTeamData = async () => {
@@ -53,15 +71,32 @@ export default function TeamInfo() {
       setLoading(true);
       try {
         const token = await user.getIdToken();
-        const response = await fetch("/api/teamRegistration", {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        });
+        
+        // Fetch team data and profile status in parallel
+        const [teamResponse, profileResponse] = await Promise.all([
+          fetch("/api/teamRegistration", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+          fetch("/api/team/profile", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          })
+        ]);
 
-        if (response.ok) {
-          const data = await response.json();
-          setTeam(data.team);
+        if (teamResponse.ok) {
+          const teamData = await teamResponse.json();
+          setTeam(teamData.team);
+        }
+
+        if (profileResponse.ok) {
+          const profileData = await profileResponse.json();
+          setProfileStatus({
+            isComplete: profileData.isProfileComplete,
+            missingFields: profileData.missingFields || []
+          });
         }
       } catch (error) {
         console.error("Error fetching team data:", error);
@@ -72,6 +107,56 @@ export default function TeamInfo() {
 
     fetchTeamData();
   }, [user]);
+
+  const handleProfileUpdate = async (data: LeaderProfileData) => {
+    if (!user) return;
+
+    try {
+      const token = await user.getIdToken();
+      const response = await fetch('/api/team/profile', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (response.ok) {
+        // Refresh team data and profile status
+        const [teamResponse, profileResponse] = await Promise.all([
+          fetch("/api/teamRegistration", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          }),
+          fetch("/api/team/profile", {
+            headers: {
+              Authorization: `Bearer ${token}`,
+            },
+          })
+        ]);
+
+        if (teamResponse.ok) {
+          const teamData = await teamResponse.json();
+          setTeam(teamData.team);
+        }
+
+        if (profileResponse.ok) {
+          const profileData = await profileResponse.json();
+          setProfileStatus({
+            isComplete: profileData.isProfileComplete,
+            missingFields: profileData.missingFields || []
+          });
+        }
+      } else {
+        throw new Error('Failed to update profile');
+      }
+    } catch (error) {
+      console.error('Error updating profile:', error);
+      throw error;
+    }
+  };
 
   if (loading) {
     return (
@@ -126,7 +211,52 @@ export default function TeamInfo() {
             animate={{ opacity: 1, y: 0 }}
             className="space-y-8"
           >
-            {/* You're All Set Section */}
+            {/* Profile Incomplete Banner */}
+            {!profileStatus.isComplete && profileStatus.missingFields.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="bg-amber-50 border-l-4 border-amber-400 p-4 mb-8 rounded-r-lg"
+              >
+                <div className="flex">
+                  <div className="flex-shrink-0">
+                    <AlertCircle className="h-5 w-5 text-amber-400" />
+                  </div>
+                  <div className="ml-3">
+                    <h3 className="text-sm font-medium text-amber-800">
+                      Complete Your Team Leader Profile
+                    </h3>
+                    <div className="mt-2 text-sm text-amber-700">
+                      <p>
+                        Your team is registered, but your leader profile is incomplete. Please complete the missing information:
+                        <strong className="ml-1">
+                          {profileStatus.missingFields.map((field, index) => (
+                            <span key={field}>
+                              {field === 'phone' ? 'Phone Number' : 
+                               field === 'gender' ? 'Gender' :
+                               field === 'college' ? 'College' :
+                               field === 'year' ? 'Year' :
+                               field === 'branch' ? 'Branch' : field}
+                              {index < profileStatus.missingFields.length - 1 ? ', ' : ''}
+                            </span>
+                          ))}
+                        </strong>
+                      </p>
+                    </div>
+                    <div className="mt-4">
+                      <button
+                        onClick={() => setIsEditModalOpen(true)}
+                        className="bg-amber-50 px-3 py-2 rounded-md text-sm font-medium text-amber-800 hover:bg-amber-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-amber-50 focus:ring-amber-600 transition-colors"
+                      >
+                        Update Profile
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              </motion.div>
+            )}
+
+            {/* You&apos;re All Set Section */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -140,7 +270,7 @@ export default function TeamInfo() {
                   </svg>
                 </div>
                 <h2 className="text-3xl font-display text-green-400 mb-4">
-                  You're All Set! 🎉
+                  You&apos;re All Set! 🎉
                 </h2>
                 <p className="text-green-200 font-body text-lg mb-6">
                   Your team has been successfully registered for the Smart India Hackathon 2025 Internal Round.
@@ -180,6 +310,39 @@ export default function TeamInfo() {
                 </p>
               </div>
             </motion.div>
+
+            {/* Profile Incomplete Banner - Only show if profile is incomplete */}
+            {!isProfileComplete && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: 0.15 }}
+                className="bg-amber-900/20 border border-amber-500/30 rounded-2xl p-6 mb-8"
+              >
+                <div className="flex items-start gap-4">
+                  <div className="w-8 h-8 bg-amber-500/20 rounded-full flex items-center justify-center mt-1">
+                    <svg className="w-5 h-5 text-amber-400" viewBox="0 0 20 20" fill="currentColor">
+                      <path fillRule="evenodd" d="M8.485 2.495c.673-1.167 2.357-1.167 3.03 0l6.28 10.875c.673 1.167-.17 2.625-1.516 2.625H3.72c-1.347 0-2.189-1.458-1.515-2.625L8.485 2.495zM10 5a.75.75 0 01.75.75v3.5a.75.75 0 01-1.5 0v-3.5A.75.75 0 0110 5zm0 9a1 1 0 100-2 1 1 0 000 2z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <div className="flex-1">
+                    <h3 className="text-lg font-semibold text-amber-200 mb-2">
+                      Complete Your Leader Profile
+                    </h3>
+                    <p className="text-amber-100/80 text-sm mb-4">
+                      Your team registration is complete, but some leader information is missing. 
+                      Please complete your profile to ensure all team data is up to date.
+                    </p>
+                    <button
+                      onClick={() => setIsEditModalOpen(true)}
+                      className="px-4 py-2 bg-amber-600 hover:bg-amber-700 text-white rounded-lg text-sm font-medium transition-colors duration-200"
+                    >
+                      Complete Profile
+                    </button>
+                  </div>
+                </div>
+              </motion.div>
+            )}
 
             {/* WhatsApp Group Section */}
             <motion.div
@@ -407,9 +570,20 @@ export default function TeamInfo() {
               transition={{ delay: 0.6 }}
               className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl p-8"
             >
-              <h2 className="text-2xl font-display text-heading mb-6">
-                Team Leader
-              </h2>
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-2xl font-display text-heading">
+                  Team Leader
+                </h2>
+                {!isProfileComplete && (
+                  <button
+                    onClick={() => setIsEditModalOpen(true)}
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
+                  >
+                    <Edit3 className="w-4 h-4" />
+                    Complete Profile
+                  </button>
+                )}
+              </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 <div>
                   <label className="block text-subheading text-sm font-medium mb-2">
@@ -433,6 +607,14 @@ export default function TeamInfo() {
                   </label>
                   <p className="text-text bg-gray-800/30 border border-gray-600 rounded-lg px-4 py-3">
                     {team.leader?.phone || "N/A"}
+                  </p>
+                </div>
+                <div>
+                  <label className="block text-subheading text-sm font-medium mb-2">
+                    College
+                  </label>
+                  <p className="text-text bg-gray-800/30 border border-gray-600 rounded-lg px-4 py-3">
+                    {team.leader?.college || "N/A"}
                   </p>
                 </div>
                 <div>
@@ -549,6 +731,22 @@ export default function TeamInfo() {
             </motion.div>
           </motion.div>
         </div>
+
+        {/* Edit Profile Modal */}
+        <EditLeaderProfileModal
+          isOpen={isEditModalOpen}
+          onClose={() => setIsEditModalOpen(false)}
+          onSave={handleProfileUpdate}
+          leaderData={{
+            name: team.leader?.name || user?.displayName || '',
+            email: team.leader?.email || user?.email || '',
+            phone: team.leader?.phone || '',
+            branch: team.leader?.branch || '',
+            year: team.leader?.year || '',
+            gender: team.leader?.gender || '',
+            college: team.leader?.college || ''
+          }}
+        />
       </div>
     </ProtectedRoute>
   );

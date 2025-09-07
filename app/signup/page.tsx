@@ -16,6 +16,7 @@ export default function Signup() {
     confirmPassword: ''
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [error, setError] = useState('');
   const [passwordError, setPasswordError] = useState('');
   
@@ -75,12 +76,18 @@ export default function Signup() {
 
   const handleGoogleSignIn = async () => {
     setError('');
+    setIsGoogleLoading(true);
     try {
       await signInWithGoogle();
       router.push('/');
     } catch (error: any) {
       console.error('Google sign-in error:', error);
-      setError(getErrorMessage(error.code));
+      // Only show error if it's not a popup closed error
+      if (error?.code !== 'auth/popup-closed-by-user' && error?.code !== 'auth/cancelled-popup-request') {
+        setError(getErrorMessage(error.code));
+      }
+    } finally {
+      setIsGoogleLoading(false);
     }
   };
 
@@ -235,6 +242,7 @@ export default function Signup() {
               <GoogleSignInButton
                 onSignIn={handleGoogleSignIn}
                 text="Sign up with Google"
+                isLoading={isGoogleLoading}
               />
 
               {/* Divider */}

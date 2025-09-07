@@ -135,7 +135,7 @@ export default function CustomDropdown({
                       return (
                         <span key={index} className={isSlotsInfo ? slotsClassName : ''}>
                           {part}
-                          {index < option.description.split(' | ').length - 1 && (
+                          {index < (option.description?.split(' | ').length || 0) - 1 && (
                             <span className="text-gray-500 mx-1">•</span>
                           )}
                         </span>

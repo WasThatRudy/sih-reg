@@ -5,17 +5,33 @@ import { useState } from 'react';
 interface GoogleSignInButtonProps {
   onSignIn: () => Promise<void>;
   text?: string;
+  isLoading?: boolean;
 }
 
-export default function GoogleSignInButton({ onSignIn, text = "Continue with Google" }: GoogleSignInButtonProps) {
-  const [isLoading, setIsLoading] = useState(false);
+export default function GoogleSignInButton({ onSignIn, text = "Continue with Google", isLoading: externalLoading }: GoogleSignInButtonProps) {
+  const [internalLoading, setInternalLoading] = useState(false);
+  
+  // Use external loading state if provided, otherwise use internal state
+  const isLoading = externalLoading !== undefined ? externalLoading : internalLoading;
 
   const handleClick = async () => {
-    setIsLoading(true);
+    if (externalLoading === undefined) {
+      setInternalLoading(true);
+    }
     try {
       await onSignIn();
+    } catch (error: any) {
+      // Only reset internal loading state if it's not a popup closed error
+      if (externalLoading === undefined && error?.code !== 'auth/popup-closed-by-user' && error?.code !== 'auth/cancelled-popup-request') {
+        setInternalLoading(false);
+      }
+      // Re-throw the error so parent can handle it
+      throw error;
     } finally {
-      setIsLoading(false);
+      // Only reset internal loading if no external loading state is provided
+      if (externalLoading === undefined) {
+        setInternalLoading(false);
+      }
     }
   };
 

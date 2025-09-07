@@ -218,26 +218,26 @@ export default function TeamInfo() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.3 }}
-              className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl p-8 mb-8"
+              className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl p-4 sm:p-6 md:p-8 mb-8"
             >
-              <div className="text-center mb-8">
-                <h2 className="text-2xl font-display text-heading mb-4">
+              <div className="text-center mb-6 sm:mb-8">
+                <h2 className="text-xl sm:text-2xl font-display text-heading mb-4">
                   Important Documents
                 </h2>
-                <p className="text-subheading font-body">
+                <p className="text-subheading font-body text-sm sm:text-base">
                   Download these required documents for the hackathon
                 </p>
               </div>
 
               {/* Important Notice */}
-              <div className="mb-8 p-4 bg-amber-900/20 border border-amber-500/30 rounded-lg">
+              <div className="mb-6 sm:mb-8 p-3 sm:p-4 bg-amber-900/20 border border-amber-500/30 rounded-lg">
                 <div className="flex items-start gap-3">
-                  <div className="w-5 h-5 bg-amber-500/20 rounded-full flex items-center justify-center mt-0.5">
-                    <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                  <div className="w-4 h-4 sm:w-5 sm:h-5 bg-amber-500/20 rounded-full flex items-center justify-center mt-0.5 flex-shrink-0">
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-amber-500 rounded-full"></div>
                   </div>
                   <div>
-                    <h3 className="font-semibold text-amber-200 mb-2">Important Notice</h3>
-                    <p className="text-amber-100/80 text-sm leading-relaxed">
+                    <h3 className="font-semibold text-amber-200 mb-2 text-sm sm:text-base">Important Notice</h3>
+                    <p className="text-amber-100/80 text-xs sm:text-sm leading-relaxed">
                       The <strong>PPT template is mandatory</strong> for the actual hackathon presentation. 
                       The guidelines are for your reference to understand the rules and requirements.
                     </p>
@@ -246,27 +246,27 @@ export default function TeamInfo() {
               </div>
 
               {/* Documents List */}
-              <div className="space-y-6">
+              <div className="space-y-4 sm:space-y-6">
                 {/* PPT Template */}
                 <motion.div
-                  className="flex items-center justify-between p-6 bg-gray-800/30 rounded-xl border border-gray-700 hover:border-heading/30 transition-all duration-300"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 sm:p-6 bg-gray-800/30 rounded-xl border border-gray-700 hover:border-heading/30 transition-all duration-300 gap-4"
                   whileHover={{ scale: 1.02 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
-                      <FileText className="w-6 h-6 text-blue-400" />
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-blue-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-blue-400" />
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-white mb-1">SIH 2025 Idea Presentation Format</h3>
-                      <p className="text-gray-400 text-sm">PowerPoint template for your hackathon presentation</p>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-white mb-1 text-sm sm:text-base">SIH 2025 Idea Presentation Format</h3>
+                      <p className="text-gray-400 text-xs sm:text-sm">PowerPoint template for your hackathon presentation</p>
                     </div>
                   </div>
                   <a
                     href="https://www.sih.gov.in/letters/SIH2025-IDEA-Presentation-Format.pptx"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
+                    className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200 text-sm sm:text-base w-full sm:w-auto"
                   >
                     <Download className="w-4 h-4" />
                     Download
@@ -276,24 +276,24 @@ export default function TeamInfo() {
 
                 {/* Guidelines */}
                 <motion.div
-                  className="flex items-center justify-between p-6 bg-gray-800/30 rounded-xl border border-gray-700 hover:border-heading/30 transition-all duration-300"
+                  className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-4 sm:p-6 bg-gray-800/30 rounded-xl border border-gray-700 hover:border-heading/30 transition-all duration-300 gap-4"
                   whileHover={{ scale: 1.02 }}
                   transition={{ type: 'spring', stiffness: 300, damping: 20 }}
                 >
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
-                      <FileText className="w-6 h-6 text-green-400" />
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="w-10 h-10 sm:w-12 sm:h-12 bg-green-500/20 rounded-lg flex items-center justify-center flex-shrink-0">
+                      <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-green-400" />
                     </div>
-                    <div>
-                      <h3 className="font-semibold text-white mb-1">SIH 2025 Official Guidelines</h3>
-                      <p className="text-gray-400 text-sm">Reference document for rules and requirements</p>
+                    <div className="min-w-0 flex-1">
+                      <h3 className="font-semibold text-white mb-1 text-sm sm:text-base">SIH 2025 Official Guidelines</h3>
+                      <p className="text-gray-400 text-xs sm:text-sm">Reference document for rules and requirements</p>
                     </div>
                   </div>
                   <a
                     href="https://sih.gov.in/letters/SIH2025-Guidelines-College-SPOC.pdf"
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200"
+                    className="flex items-center justify-center gap-2 px-3 sm:px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200 text-sm sm:text-base w-full sm:w-auto"
                   >
                     <Download className="w-4 h-4" />
                     Download
@@ -303,14 +303,14 @@ export default function TeamInfo() {
               </div>
 
               {/* Additional Info */}
-              <div className="mt-8 p-4 bg-gray-800/20 rounded-lg border border-gray-700">
+              <div className="mt-6 sm:mt-8 p-3 sm:p-4 bg-gray-800/20 rounded-lg border border-gray-700">
                 <div className="flex items-start gap-3">
-                  <div className="w-5 h-5 bg-blue-500/20 rounded-full flex items-center justify-center mt-0.5">
-                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  <div className="w-4 h-4 sm:w-5 sm:h-5 bg-blue-500/20 rounded-full flex items-center justify-center mt-0.5 flex-shrink-0">
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-blue-500 rounded-full"></div>
                   </div>
                   <div>
-                    <h4 className="font-medium text-white mb-2">What to do with these documents?</h4>
-                    <ul className="text-gray-300 text-sm space-y-1">
+                    <h4 className="font-medium text-white mb-2 text-sm sm:text-base">What to do with these documents?</h4>
+                    <ul className="text-gray-300 text-xs sm:text-sm space-y-1">
                       <li>• Use the PPT template for your hackathon presentation (mandatory)</li>
                       <li>• Review the guidelines to understand rules and requirements</li>
                       <li>• Follow the presentation format structure during the hackathon</li>

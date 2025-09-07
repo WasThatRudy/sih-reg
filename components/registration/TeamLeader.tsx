@@ -21,6 +21,7 @@ interface TeamLeaderProps {
   isDataFromAuth?: boolean; // New prop to indicate if data is from authentication
   emailError?: string;
   phoneError?: string;
+  isEmailLocked?: boolean; // New prop to lock the email field
 }
 
 const yearOptions = [
@@ -36,7 +37,7 @@ const genderOptions = [
   { value: 'Other', label: 'Other' }
 ];
 
-export default function TeamLeader({ teamLeader, onInputChange, isDataFromAuth = false, emailError, phoneError }: TeamLeaderProps) {
+export default function TeamLeader({ teamLeader, onInputChange, isDataFromAuth = false, emailError, phoneError, isEmailLocked = false }: TeamLeaderProps) {
   return (
     <div>
       {/* Info message when data is pre-filled */}
@@ -50,7 +51,7 @@ export default function TeamLeader({ teamLeader, onInputChange, isDataFromAuth =
             <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
               <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clipRule="evenodd" />
             </svg>
-            <span>Your name and email have been automatically filled from your account.</span>
+            <span>Your name and email have been automatically filled from your account. You can modify your name but the email is locked and cannot be changed.</span>
           </div>
         </motion.div>
       )}
@@ -74,6 +75,7 @@ export default function TeamLeader({ teamLeader, onInputChange, isDataFromAuth =
           required
           validationType="email"
           error={emailError}
+          disabled={isEmailLocked}
         />
         <ValidatedInput
           label="Phone"

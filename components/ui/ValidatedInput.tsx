@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { getValidationMessage } from '@/lib/utils/validation';
-import { EyeIcon } from 'lucide-react';
+import { EyeIcon, LockIcon } from 'lucide-react';
 
 interface ValidatedInputProps {
   label: string;
@@ -14,6 +14,7 @@ interface ValidatedInputProps {
   validationType?: 'email' | 'phone' | 'name' | 'team name' | 'branch';
   className?: string;
   error?: string;
+  disabled?: boolean;
 }
 
 export default function ValidatedInput({
@@ -25,7 +26,8 @@ export default function ValidatedInput({
   required = false,
   validationType,
   className = '',
-  error
+  error,
+  disabled = false
 }: ValidatedInputProps) {
   const [touched, setTouched] = useState(false);
   const [validationError, setValidationError] = useState('');
@@ -79,12 +81,15 @@ export default function ValidatedInput({
           value={value}
           onChange={handleChange}
           onBlur={handleBlur}
+          disabled={disabled}
           className={`w-full px-4 py-3 bg-gray-800/50 border rounded-lg text-white placeholder-gray-400 focus:outline-none transition-colors duration-300 font-body ${
-            hasError 
-              ? 'border-red-500 focus:border-red-400' 
-              : isValid 
-                ? 'border-green-500 focus:border-green-400'
-                : 'border-gray-700 focus:border-heading'
+            disabled
+              ? 'bg-gray-700/50 text-gray-400 cursor-not-allowed border-gray-600'
+              : hasError 
+                ? 'border-red-500 focus:border-red-400' 
+                : isValid 
+                  ? 'border-green-500 focus:border-green-400'
+                  : 'border-gray-700 focus:border-heading'
           }`}
           placeholder={placeholder}
           required={required}
@@ -94,9 +99,14 @@ export default function ValidatedInput({
             <EyeIcon className="w-5 h-5 text-gray-400" />
           </button>
         )}
+        {disabled && (
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+            <LockIcon className="w-5 h-5 text-gray-400" />
+          </div>
+        )}
         
         {/* Validation icon */}
-        {type !== 'password' && <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+        {type !== 'password' && !disabled && <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
           {hasError && (
             <motion.svg
               initial={{ scale: 0 }}

@@ -211,6 +211,11 @@ export default function Registration() {
     value: string,
     index?: number
   ) => {
+    // Prevent email changes when it's locked (from Firebase)
+    if (section === "teamLeader" && field === "email" && user && formData.teamLeader.email === user.email) {
+      return; // Don't allow changes to locked email
+    }
+
     if (section === "teamLeader") {
       setFormData((prev) => ({
         ...prev,
@@ -590,6 +595,13 @@ export default function Registration() {
                     !!(
                       user &&
                       (formData.teamLeader.name || formData.teamLeader.email)
+                    )
+                  }
+                  isEmailLocked={
+                    !!(
+                      user &&
+                      formData.teamLeader.email &&
+                      formData.teamLeader.email === user.email
                     )
                   }
                   emailError={getDuplicateError("email", "team leader")}

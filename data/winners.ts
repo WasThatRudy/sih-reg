@@ -18,7 +18,7 @@ export const winners: Winner[] = [
   },
   {
     year: "2024",
-    category: "Hardware",
+    category: "Software",
     teamName: "405_Resolved",
     projectTitle: "SurakshaSanchay - Hardware Inventory Management in police department",
     members: ["Bhoomi Agrawal", "Kamini Banait", "Prajwal KP", "Shruti Sinha", "Ritvik K", "Aryan Gautam"],

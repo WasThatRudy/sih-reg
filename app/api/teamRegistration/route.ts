@@ -17,21 +17,25 @@ export async function POST(request: NextRequest) {
     await dbConnect();
 
     // Check if user is currently logged in as admin
-    try {
-      const adminRequest = await verifyAdminAuth(request);
-      if (adminRequest.admin) {
-        return NextResponse.json(
-          {
-            success: false,
-            error: "Please logout as admin first to register as a team member",
-            isAdmin: true,
-            adminEmail: adminRequest.admin.email,
-          },
-          { status: 403 }
-        );
+    const authHeader = request.headers.get("authorization");
+    if (authHeader && authHeader.startsWith("Basic ")) {
+      try {
+        const adminRequest = await verifyAdminAuth(request);
+        if (adminRequest.admin) {
+          return NextResponse.json(
+            {
+              success: false,
+              error: "Please logout as admin first to register as a team member",
+              isAdmin: true,
+              adminEmail: adminRequest.admin.email,
+            },
+            { status: 403 }
+          );
+        }
+      } catch (error) {
+        // Admin auth failed, but continue with normal team registration
+        console.log("Admin auth check failed:", (error as Error).message);
       }
-    } catch {
-      // Not logged in as admin, continue with normal flow
     }
 
     // Authenticate user with Firebase (for team registration)
@@ -147,6 +151,7 @@ export async function POST(request: NextRequest) {
       teamName,
       problemStatement,
       members: teamMembers,
+      teamLeader: teamLeader ? { gender: teamLeader.gender } : undefined,
     });
 
     if (!validation.isValid) {
@@ -194,6 +199,21 @@ export async function POST(request: NextRequest) {
 
     try {
       await session.withTransaction(async () => {
+        // Update user with leader details if provided
+        if (teamLeader) {
+          await User.findByIdAndUpdate(
+            user._id,
+            {
+              phone: teamLeader.phone,
+              gender: teamLeader.gender?.toLowerCase() as "male" | "female" | "other",
+              college: teamLeader.college || "Dayananda Sagar College of Engineering",
+              year: teamLeader.year,
+              branch: teamLeader.branch,
+            },
+            { session }
+          );
+        }
+
         // Create the team
         const team = new Team({
           teamName: teamName.trim(),
@@ -277,7 +297,7 @@ export async function GET(request: NextRequest) {
     // Get user's team if exists
     const team = await Team.findOne({ leader: user._id })
       .populate("problemStatement", "psNumber title description domain")
-      .populate("leader", "name email phone branch year gender")
+      .populate("leader", "name email phone branch year gender college")
       .lean();
 
     if (!team) {

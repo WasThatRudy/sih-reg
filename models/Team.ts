@@ -160,17 +160,42 @@ const teamSchema = new Schema<ITeam>(
 );
 
 // Custom validation for gender diversity
-teamSchema.pre("save", function (next) {
-  const hasFemaleMember = this.members.some(
-    (member: ITeamMember) => member.gender === "female"
-  );
+teamSchema.pre("save", async function (next) {
+  try {
+    // Check if there's a female member in the team
+    const hasFemaleMember = this.members.some(
+      (member: ITeamMember) => member.gender?.toLowerCase() === "female"
+    );
 
-  if (!hasFemaleMember) {
-    const error = new Error("Team must have at least one female member");
-    return next(error);
+    // If no female member, check if leader is female
+    if (!hasFemaleMember) {
+      // Import User model dynamically to avoid circular dependency
+      const { User } = await import("./User");
+      
+      // Use the same session if available to ensure we see the updated leader data
+      const session = this.$session();
+      const leader = await User.findById(this.leader).session(session);
+      
+      console.log("Team validation - Leader gender check:", {
+        leaderId: this.leader,
+        leader: leader ? {
+          email: leader.email,
+          gender: leader.gender,
+          genderLower: leader.gender?.toLowerCase()
+        } : null
+      });
+      
+      if (!leader || leader.gender?.toLowerCase() !== "female") {
+        const error = new Error("Team must have at least one female member (including leader)");
+        return next(error);
+      }
+    }
+
+    next();
+  } catch (error) {
+    console.error("Team validation error:", error);
+    next(error instanceof Error ? error : new Error("Validation failed"));
   }
-
-  next();
 });
 
 export const Team: Model<ITeam> =

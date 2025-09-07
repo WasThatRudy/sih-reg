@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
 
     // Get teams with pagination
     const teams = await Team.find(query)
-      .populate("leader", "name email")
+      .populate("leader", "name email phone branch year gender college")
       .populate("problemStatement", "psNumber title domain")
       .sort({ registrationDate: -1 })
       .skip(skip)
@@ -94,7 +94,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const team = await Team.findByIdAndUpdate(teamId, { status }, { new: true })
-      .populate("leader", "name email")
+      .populate("leader", "name email phone branch year gender college")
       .populate("problemStatement", "title");
 
     if (!team) {

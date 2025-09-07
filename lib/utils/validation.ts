@@ -13,6 +13,9 @@ export interface TeamRegistrationData {
   teamName: string;
   problemStatement: string;
   members: ITeamMember[];
+  teamLeader?: {
+    gender?: string;
+  };
 }
 
 export function validateTeamRegistration(data: TeamRegistrationData): {
@@ -46,12 +49,14 @@ export function validateTeamRegistration(data: TeamRegistrationData): {
       errors.push(...memberErrors);
     });
 
-    // Check gender diversity
+    // Check gender diversity (including leader)
     const hasFemaleMember = data.members.some(
-      (member) => member.gender === "female"
+      (member) => member.gender?.toLowerCase() === "female"
     );
-    if (!hasFemaleMember) {
-      errors.push("Team must have at least one female member");
+    const hasFemaleLead = data.teamLeader?.gender?.toLowerCase() === "female";
+    
+    if (!hasFemaleMember && !hasFemaleLead) {
+      errors.push("Team must have at least one female member (including leader)");
     }
 
     // Check for duplicate emails
@@ -96,7 +101,7 @@ export function validateTeamMember(
   }
 
   // Validate gender
-  if (!member.gender || !["male", "female", "other"].includes(member.gender)) {
+  if (!member.gender || !["male", "female", "other"].includes(member.gender.toLowerCase())) {
     errors.push(`${prefix} Gender must be selected`);
   }
 
@@ -380,7 +385,7 @@ export const validateNoDuplicates = (
   });
 
   // Find duplicates and create error messages for each source
-  emailMap.forEach((sources, email) => {
+  emailMap.forEach((sources) => {
     if (sources.length > 1) {
       sources.forEach((source) => {
         const otherSources = sources.filter((s) => s !== source);
@@ -391,7 +396,7 @@ export const validateNoDuplicates = (
     }
   });
 
-  phoneMap.forEach((sources, phone) => {
+  phoneMap.forEach((sources) => {
     if (sources.length > 1) {
       sources.forEach((source) => {
         const otherSources = sources.filter((s) => s !== source);

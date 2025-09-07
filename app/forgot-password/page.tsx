@@ -1,42 +1,32 @@
 "use client";
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import Navbar from "@/components/Navbar";
 import ValidatedInput from "@/components/ui/ValidatedInput";
-import GoogleSignInButton from "@/components/ui/GoogleSignInButton";
-import { useAuth } from "@/lib/context/AuthContext";
+import { sendPasswordResetEmail } from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
-export default function Login() {
-  const [formData, setFormData] = useState({
-    email: "",
-    password: "",
-  });
+export default function ForgotPasswordPage() {
+  const [email, setEmail] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [message, setMessage] = useState("");
   const [error, setError] = useState("");
-
-  const { signIn, signInWithGoogle } = useAuth();
-  const router = useRouter();
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({
-      ...prev,
-      [field]: value,
-    }));
-    if (error) setError(""); // Clear error when user types
-  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
     setError("");
+    setMessage("");
 
     try {
-      await signIn(formData.email, formData.password);
-      router.push("/"); // Redirect to home page after successful login
+      await sendPasswordResetEmail(auth, email);
+      setMessage(
+        "Password reset email sent! Check your inbox and follow the instructions to reset your password."
+      );
+      setEmail("");
     } catch (error: unknown) {
-      console.error("Login error:", error);
+      console.error("Password reset error:", error);
       const errorCode = (error as { code?: string })?.code;
       setError(getErrorMessage(errorCode));
     } finally {
@@ -44,30 +34,24 @@ export default function Login() {
     }
   };
 
-  const handleGoogleSignIn = async () => {
-    setError("");
-    try {
-      await signInWithGoogle();
-      router.push("/");
-    } catch (error: unknown) {
-      console.error("Google sign-in error:", error);
-      const errorCode = (error as { code?: string })?.code;
-      setError(getErrorMessage(errorCode));
-    }
-  };
-
   const getErrorMessage = (errorCode?: string) => {
     switch (errorCode) {
       case "auth/user-not-found":
         return "No account found with this email address.";
-      case "auth/wrong-password":
-        return "Incorrect password. Please try again.";
       case "auth/invalid-email":
         return "Invalid email address format.";
       case "auth/too-many-requests":
-        return "Too many failed attempts. Please try again later.";
+        return "Too many requests. Please try again later.";
+      case "auth/invalid-credential":
+        return "Invalid credentials. Please check your email address.";
+      case "auth/network-request-failed":
+        return "Network error. Please check your internet connection.";
+      case "auth/configuration-not-found":
+        return "Firebase configuration error. Please contact support.";
       default:
-        return "Login failed. Please check your credentials and try again.";
+        return `Failed to send password reset email. Error: ${
+          errorCode || "Unknown error"
+        }. Please try again.`;
     }
   };
 
@@ -84,14 +68,15 @@ export default function Login() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8 }}>
             <h1 className="font-display text-4xl md:text-5xl font-light mb-4 text-heading tracking-tight">
-              Welcome Back
+              Forgot Password
             </h1>
             <p className="text-gray-400 text-lg font-body">
-              Sign in to access your account
+              Enter your email address and we&apos;ll send you a link to reset
+              your password.
             </p>
           </motion.div>
 
-          {/* Login Form */}
+          {/* Forgot Password Form */}
           <motion.div
             className="bg-gray-900/30 border border-gray-800 rounded-2xl p-8"
             initial={{ opacity: 0, y: 30 }}
@@ -108,43 +93,26 @@ export default function Login() {
                 </motion.div>
               )}
 
+              {/* Success Message */}
+              {message && (
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  className="p-4 bg-green-900/20 border border-green-800 rounded-lg text-green-400 text-sm font-body">
+                  {message}
+                </motion.div>
+              )}
+
               {/* Email Field */}
               <ValidatedInput
                 label="Email Address"
                 type="email"
-                value={formData.email}
-                onChange={(value) => handleInputChange("email", value)}
+                value={email}
+                onChange={(value) => setEmail(value)}
                 placeholder="Enter your email address"
                 required
                 validationType="email"
               />
-
-              {/* Password Field */}
-              <div>
-                <label className="block text-subheading text-sm font-medium mb-2 tracking-wide">
-                  Password <span className="text-red-400">*</span>
-                </label>
-                <input
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) =>
-                    handleInputChange("password", e.target.value)
-                  }
-                  className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-white placeholder-gray-400 focus:border-heading focus:outline-none transition-colors duration-300 font-body"
-                  placeholder="Enter your password"
-                  required
-                  minLength={6}
-                />
-              </div>
-
-              {/* Forgot Password Link */}
-              <div className="text-right">
-                <Link
-                  href="/forgot-password"
-                  className="text-subheading hover:text-subheading/80 transition-colors duration-300 font-medium text-sm">
-                  Forgot your password?
-                </Link>
-              </div>
 
               {/* Submit Button */}
               <motion.button
@@ -160,41 +128,20 @@ export default function Login() {
                 {isLoading ? (
                   <div className="flex items-center justify-center">
                     <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin mr-2"></div>
-                    Signing in...
+                    Sending...
                   </div>
                 ) : (
-                  "Sign In"
+                  "Send Reset Link"
                 )}
               </motion.button>
 
-              {/* Google Sign In */}
-              <GoogleSignInButton
-                onSignIn={handleGoogleSignIn}
-                text="Sign in with Google"
-              />
-
-              {/* Divider */}
-              <div className="relative my-6">
-                <div className="absolute inset-0 flex items-center">
-                  <div className="w-full border-t border-gray-700"></div>
-                </div>
-                <div className="relative flex justify-center text-sm">
-                  <span className="px-4 bg-gray-900/30 text-gray-400 font-body">
-                    or
-                  </span>
-                </div>
-              </div>
-
-              {/* Sign Up Link */}
+              {/* Back to Login Link */}
               <div className="text-center">
-                <p className="text-gray-400 font-body">
-                  Don&apos;t have an account?{" "}
-                  <Link
-                    href="/signup"
-                    className="text-subheading hover:text-subheading/80 transition-colors duration-300 font-medium">
-                    Sign up here
-                  </Link>
-                </p>
+                <Link
+                  href="/login"
+                  className="text-subheading hover:text-subheading/80 transition-colors duration-300 font-medium text-sm">
+                  Back to Login
+                </Link>
               </div>
             </form>
           </motion.div>
@@ -206,7 +153,7 @@ export default function Login() {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.4 }}>
             <p className="text-gray-500 text-sm font-body">
-              Secure login powered by Firebase Authentication
+              Password reset powered by Firebase Authentication
             </p>
           </motion.div>
         </div>

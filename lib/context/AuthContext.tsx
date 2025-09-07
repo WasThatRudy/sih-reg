@@ -1,16 +1,23 @@
-'use client';
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { 
-  User, 
-  onAuthStateChanged, 
-  signInWithEmailAndPassword, 
-  createUserWithEmailAndPassword, 
+"use client";
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useState,
+  ReactNode,
+} from "react";
+import {
+  User,
+  onAuthStateChanged,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
   signOut as firebaseSignOut,
   updateProfile,
   signInWithPopup,
-  GoogleAuthProvider
-} from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+  GoogleAuthProvider,
+  sendPasswordResetEmail,
+} from "firebase/auth";
+import { auth } from "@/lib/firebase";
 
 interface AuthContextType {
   user: User | null;
@@ -18,9 +25,14 @@ interface AuthContextType {
   hasTeam: boolean;
   isAdmin: boolean;
   signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, displayName: string) => Promise<void>;
+  signUp: (
+    email: string,
+    password: string,
+    displayName: string
+  ) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   signOut: () => Promise<void>;
+  sendPasswordReset: (email: string) => Promise<void>;
   refreshTeamStatus: () => Promise<void>;
 }
 
@@ -29,7 +41,7 @@ const AuthContext = createContext<AuthContextType | undefined>(undefined);
 export const useAuth = () => {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 };
@@ -54,12 +66,12 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
     try {
       const token = await currentUser.getIdToken();
-      const response = await fetch('/api/teamRegistration', {
+      const response = await fetch("/api/teamRegistration", {
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
-      
+
       if (response.ok) {
         const data = await response.json();
         setHasTeam(!!data.team);
@@ -67,7 +79,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         setHasTeam(false);
       }
     } catch (error) {
-      console.error('Error checking team status:', error);
+      console.error("Error checking team status:", error);
       setHasTeam(false);
     }
   };
@@ -76,30 +88,30 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     const unsubscribe = onAuthStateChanged(auth, async (user) => {
       setUser(user);
       setLoading(false);
-      
+
       // Check team status and admin role for authenticated users
       if (user) {
         try {
           const token = await user.getIdToken();
-          
+
           // Check user role and team status
           const [userResponse, teamResponse] = await Promise.all([
-            fetch('/api/auth/verify', {
-              headers: { 'Authorization': `Bearer ${token}` }
+            fetch("/api/auth/verify", {
+              headers: { Authorization: `Bearer ${token}` },
             }),
-            fetch('/api/teamRegistration', {
-              headers: { 'Authorization': `Bearer ${token}` }
-            })
+            fetch("/api/teamRegistration", {
+              headers: { Authorization: `Bearer ${token}` },
+            }),
           ]);
-          
+
           // Check admin role
           if (userResponse.ok) {
             const userData = await userResponse.json();
-            setIsAdmin(userData.user?.role === 'admin');
+            setIsAdmin(userData.user?.role === "admin");
           } else {
             setIsAdmin(false);
           }
-          
+
           // Check team status
           if (teamResponse.ok) {
             const teamData = await teamResponse.json();
@@ -108,7 +120,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
             setHasTeam(false);
           }
         } catch (error) {
-          console.error('Error checking user status:', error);
+          console.error("Error checking user status:", error);
           setHasTeam(false);
           setIsAdmin(false);
         }
@@ -131,10 +143,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
-  const signUp = async (email: string, password: string, displayName: string) => {
+  const signUp = async (
+    email: string,
+    password: string,
+    displayName: string
+  ) => {
     setLoading(true);
     try {
-      const { user } = await createUserWithEmailAndPassword(auth, email, password);
+      const { user } = await createUserWithEmailAndPassword(
+        auth,
+        email,
+        password
+      );
       await updateProfile(user, { displayName });
     } catch (error) {
       setLoading(false);
@@ -147,25 +167,25 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       const provider = new GoogleAuthProvider();
       const result = await signInWithPopup(auth, provider);
-      
+
       // Sync user with backend after Google OAuth
       if (result.user) {
         try {
           const token = await result.user.getIdToken();
-          await fetch('/api/auth/verify', {
-            method: 'POST',
+          await fetch("/api/auth/verify", {
+            method: "POST",
             headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${token}`
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${token}`,
             },
             body: JSON.stringify({
-              name: result.user.displayName || '',
-              email: result.user.email || '',
-              firebaseUid: result.user.uid
-            })
+              name: result.user.displayName || "",
+              email: result.user.email || "",
+              firebaseUid: result.user.uid,
+            }),
           });
         } catch (syncError) {
-          console.error('Error syncing user with backend:', syncError);
+          console.error("Error syncing user with backend:", syncError);
           // Don't throw here as the user is still authenticated
         }
       }
@@ -185,6 +205,14 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     }
   };
 
+  const sendPasswordReset = async (email: string) => {
+    try {
+      await sendPasswordResetEmail(auth, email);
+    } catch (error) {
+      throw error;
+    }
+  };
+
   const value = {
     user,
     loading,
@@ -194,12 +222,9 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     signUp,
     signInWithGoogle,
     signOut,
+    sendPasswordReset,
     refreshTeamStatus,
   };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  );
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 };

@@ -158,14 +158,17 @@ export default function Hero() {
       />
 
       {/* Centered bouncing arrow to Instructions */}
-      <Link href="#instructions" className="absolute bottom-6 left-1/2 -translate-x-1/2 text-subheading">
+      <Link href="#instructions" className="absolute bottom-4 sm:bottom-6 left-1/2 -translate-x-1/2 text-subheading px-4">
         <motion.div
           animate={{ y: [0, -8, 0] }}
           transition={{ duration: 1.2, repeat: Infinity, ease: "easeInOut" }}
           className="flex flex-col items-center gap-2"
         >
-          <span className="text-sm md:text-base">please read instructions before registering</span>
-          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-6 h-6">
+          <span className="text-xs sm:text-sm md:text-base text-center leading-tight">
+            <span className="block sm:inline">please read instructions</span>
+            <span className="block sm:inline sm:ml-1">before registering</span>
+          </span>
+          <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-5 h-5 sm:w-6 sm:h-6">
             <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
           </svg>
         </motion.div>

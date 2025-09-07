@@ -44,7 +44,7 @@ export default function Instructions() {
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.4 }}
           >
-            Before registering, ensure your team adheres to the following rules.
+            Before registering, please think rationally and ensure your team adheres to the following rules.
           </motion.p>
         </motion.div>
 
@@ -65,6 +65,10 @@ export default function Instructions() {
             <ul className="space-y-5 text-gray-300">
               <li className="flex items-start gap-3">
                 <div className="w-1.5 h-1.5 bg-subheading/60 rounded-full mt-2"></div>
+                <span className="font-body tracking-wide">The number of teams reserved for a specific problem statement is 3. We encourage registering on the platform as soon as possible</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="w-1.5 h-1.5 bg-subheading/60 rounded-full mt-2"></div>
                 <span className="font-body tracking-wide">Each team must be exactly 6 members, including atleast 1 female</span>
               </li>
               <li className="flex items-start gap-3">
@@ -78,6 +82,10 @@ export default function Instructions() {
               <li className="flex items-start gap-3">
                 <div className="w-1.5 h-1.5 bg-subheading/60 rounded-full mt-2"></div>
                 <span className="font-body tracking-wide">Only the team leader has to fill the form</span>
+              </li>
+              <li className="flex items-start gap-3">
+                <div className="w-1.5 h-1.5 bg-subheading/60 rounded-full mt-2"></div>
+                <span className="font-body tracking-wide">If a team works on a problem different from the one they picked, they'll be disqualified</span>
               </li>
             </ul>
           </motion.div>

@@ -561,7 +561,6 @@ export default function Registration() {
                       options={problemStatements.map((ps) => ({
                         value: ps._id,
                         label: `${ps.psNumber}: ${ps.title}`,
-                        description: ps.description,
                       }))}
                       value={formData.problemStatement}
                       onChange={(value) =>

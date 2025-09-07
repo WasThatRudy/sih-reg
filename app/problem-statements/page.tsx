@@ -15,69 +15,6 @@ interface ProblemStatement {
   isActive: boolean;
 }
 
-const staticProblemStatements = [
-  {
-    id: 1,
-    category: "Healthcare",
-    title: "AI-Powered Disease Diagnosis System",
-    description: "Develop an intelligent system that can analyze medical images and patient data to provide early disease detection and diagnosis recommendations.",
-    difficulty: "Advanced",
-    techStack: ["Machine Learning", "Computer Vision", "Python", "TensorFlow"],
-    prize: "₹1,00,000",
-    deadline: "2024-12-31"
-  },
-  {
-    id: 2,
-    category: "Agriculture",
-    title: "Smart Crop Monitoring & Management",
-    description: "Create an IoT-based solution for real-time crop monitoring, soil analysis, and automated irrigation systems to optimize agricultural productivity.",
-    difficulty: "Intermediate",
-    techStack: ["IoT", "Arduino", "Python", "Cloud Computing"],
-    prize: "₹75,000",
-    deadline: "2024-12-31"
-  },
-  {
-    id: 3,
-    category: "Education",
-    title: "Personalized Learning Platform",
-    description: "Build an adaptive learning system that personalizes educational content based on student performance, learning style, and pace.",
-    difficulty: "Intermediate",
-    techStack: ["React", "Node.js", "AI/ML", "MongoDB"],
-    prize: "₹80,000",
-    deadline: "2024-12-31"
-  },
-  {
-    id: 4,
-    category: "Environment",
-    title: "Waste Management Optimization",
-    description: "Develop a smart waste collection and segregation system using computer vision and IoT to improve recycling efficiency and reduce environmental impact.",
-    difficulty: "Advanced",
-    techStack: ["Computer Vision", "IoT", "Python", "Cloud Platform"],
-    prize: "₹90,000",
-    deadline: "2024-12-31"
-  },
-  {
-    id: 5,
-    category: "Transportation",
-    title: "Traffic Flow Optimization",
-    description: "Create an intelligent traffic management system that uses real-time data to optimize signal timing and reduce congestion in urban areas.",
-    difficulty: "Advanced",
-    techStack: ["Data Analytics", "Machine Learning", "Python", "Real-time Systems"],
-    prize: "₹85,000",
-    deadline: "2024-12-31"
-  },
-  {
-    id: 6,
-    category: "Finance",
-    title: "Financial Literacy App",
-    description: "Build a mobile application that helps users understand financial concepts, plan investments, and make informed financial decisions.",
-    difficulty: "Beginner",
-    techStack: ["React Native", "Node.js", "MongoDB", "Financial APIs"],
-    prize: "₹60,000",
-    deadline: "2024-12-31"
-  }
-];
-
 const containerVariants = {
   hidden: { opacity: 0 },
   visible: {
@@ -175,7 +112,7 @@ export default function ProblemStatements() {
             initial="hidden"
             animate="visible"
           >
-            {problemStatements.length > 0 ? problemStatements.map((problem, index) => (
+            {problemStatements.length > 0 ? problemStatements.map((problem) => (
               <motion.div 
                 key={problem._id}
                 className="group bg-gray-900/30 border border-gray-800 rounded-2xl p-8 hover:border-heading/30 transition-all duration-500"
@@ -231,49 +168,11 @@ export default function ProblemStatements() {
                   )}
                 </div>
               </motion.div>
-            )) : staticProblemStatements.map((problem, index) => (
-              <motion.div 
-                key={problem.id}
-                className="group bg-gray-900/30 border border-gray-800 rounded-2xl p-8 hover:border-heading/30 transition-all duration-500"
-                variants={itemVariants}
-                whileHover={{ y: -8, scale: 1.02 }}
-                transition={{ type: "spring", stiffness: 300, damping: 20 }}
-              >
-                {/* Header */}
-                <div className="flex items-start justify-between mb-6">
-                  <div className="flex items-center gap-3">
-                    <span className="bg-heading/10 text-heading px-3 py-1 rounded-full text-sm font-medium border border-heading/20 tracking-wide">
-                      {problem.category}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Title */}
-                <h3 className="font-display text-2xl font-light text-white mb-4 group-hover:text-subheading transition-colors duration-300 tracking-wide">
-                  {problem.title}
-                </h3>
-
-                {/* Description */}
-                <p className="font-body text-gray-400 text-base mb-6 leading-relaxed tracking-wide">
-                  {problem.description}
-                </p>
-
-                {/* Footer */}
-                <div className="flex items-center justify-between pt-4 border-t border-gray-800">
-                  <span className="text-gray-500 text-sm font-body tracking-wide">
-                    Sample Problem Statement
-                  </span>
-                  <motion.button 
-                    className="px-6 py-2 bg-heading/10 text-heading rounded-full text-sm font-medium border border-heading/20 hover:bg-heading hover:text-white transition-colors duration-300 tracking-wide"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    transition={{ type: "spring", stiffness: 400, damping: 17 }}
-                  >
-                    View Details
-                  </motion.button>
-                </div>
-              </motion.div>
-            ))}
+            )) : (
+              <div className="col-span-1 lg:col-span-2 text-center py-12">
+                <p className="font-body text-gray-400 text-base">No problem statements to show.</p>
+              </div>
+            )}
           </motion.div>
         </div>
       </section>

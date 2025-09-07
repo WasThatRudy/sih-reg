@@ -1,11 +1,14 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "../../../lib/middleware/auth";
 import { verifyAdminAuth } from "../../../lib/middleware/adminAuth";
-import { Team } from "../../../models/Team";
+import { Team, ITeamMember } from "../../../models/Team";
 import { ProblemStatement } from "../../../models/ProblemStatement";
 import { User } from "../../../models/User";
 import dbConnect from "../../../lib/mongodb";
-import { validateTeamRegistration } from "../../../lib/utils/validation";
+import {
+  validateTeamRegistration,
+  validateTeamMember,
+} from "../../../lib/utils/validation";
 import { sendTeamRegistrationEmail } from "../../../lib/utils/email";
 import mongoose from "mongoose";
 
@@ -18,11 +21,11 @@ export async function POST(request: NextRequest) {
       const adminRequest = await verifyAdminAuth(request);
       if (adminRequest.admin) {
         return NextResponse.json(
-          { 
-            success: false, 
+          {
+            success: false,
             error: "Please logout as admin first to register as a team member",
             isAdmin: true,
-            adminEmail: adminRequest.admin.email
+            adminEmail: adminRequest.admin.email,
           },
           { status: 403 }
         );
@@ -54,18 +57,105 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { teamName, problemStatement, members } = body;
+    const { teamName, problemStatement, teamLeader, members } = body;
+
+    // Validate team leader data if provided
+    if (teamLeader) {
+      const leaderErrors = validateTeamMember(
+        {
+          name: teamLeader.name,
+          email: teamLeader.email,
+          phone: teamLeader.phone,
+          college:
+            teamLeader.college || "Dayananda Sagar College of Engineering",
+          year: teamLeader.year,
+          branch: teamLeader.branch,
+          gender: teamLeader.gender?.toLowerCase() as
+            | "male"
+            | "female"
+            | "other",
+        },
+        0 // Use 0 to indicate leader
+      );
+
+      if (leaderErrors.length > 0) {
+        const formattedErrors = leaderErrors.map((error: string) =>
+          error.replace("Member 0:", "Team Leader:")
+        );
+        return NextResponse.json(
+          {
+            success: false,
+            errors: formattedErrors,
+            error: "Team leader validation failed",
+          },
+          { status: 400 }
+        );
+      }
+    }
+
+    // Prepare team members array (should contain exactly 5 members, excluding leader)
+    const teamMembers: ITeamMember[] = [];
+
+    // Add other members (should be exactly 5 members)
+    if (members && Array.isArray(members)) {
+      // Filter out members with invalid/empty data and only take first 5
+      const validMembers = members.filter(
+        (member) =>
+          member.name &&
+          member.email &&
+          member.phone &&
+          member.gender &&
+          member.gender.trim() !== ""
+      );
+
+      const membersToAdd = validMembers.slice(0, 5);
+
+      membersToAdd.forEach((member) => {
+        teamMembers.push({
+          name: member.name,
+          email: member.email,
+          phone: member.phone,
+          college: member.college || "Dayananda Sagar College of Engineering", // Default college
+          year: member.year,
+          branch: member.branch,
+          gender: member.gender?.toLowerCase() as "male" | "female" | "other", // Normalize case
+        });
+      });
+    }
+
+    // Check for duplicate emails between leader and members
+    if (teamLeader && teamMembers.length > 0) {
+      const leaderEmail = teamLeader.email.toLowerCase();
+      const memberEmails = teamMembers.map((m) => m.email.toLowerCase());
+
+      if (memberEmails.includes(leaderEmail)) {
+        return NextResponse.json(
+          {
+            success: false,
+            errors: [
+              "Team leader and members must have unique email addresses",
+            ],
+            error: "Duplicate email validation failed",
+          },
+          { status: 400 }
+        );
+      }
+    }
 
     // Validate input data
     const validation = validateTeamRegistration({
       teamName,
       problemStatement,
-      members,
+      members: teamMembers,
     });
 
     if (!validation.isValid) {
       return NextResponse.json(
-        { success: false, errors: validation.errors, error: "Validation failed" },
+        {
+          success: false,
+          errors: validation.errors,
+          error: "Validation failed",
+        },
         { status: 400 }
       );
     }
@@ -108,7 +198,7 @@ export async function POST(request: NextRequest) {
         const team = new Team({
           teamName: teamName.trim(),
           leader: user._id,
-          members,
+          members: teamMembers,
           problemStatement,
           status: "registered",
           registrationDate: new Date(),
@@ -159,10 +249,10 @@ export async function POST(request: NextRequest) {
     console.error("Team registration error:", error);
 
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: "Failed to register team",
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );
@@ -187,6 +277,7 @@ export async function GET(request: NextRequest) {
     // Get user's team if exists
     const team = await Team.findOne({ leader: user._id })
       .populate("problemStatement", "psNumber title description domain")
+      .populate("leader", "name email phone branch year gender")
       .lean();
 
     if (!team) {
@@ -205,6 +296,7 @@ export async function GET(request: NextRequest) {
       team: {
         _id: team._id,
         teamName: team.teamName,
+        leader: team.leader,
         members: team.members,
         problemStatement: team.problemStatement,
         status: team.status,

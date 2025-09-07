@@ -14,6 +14,7 @@ interface CustomDropdownProps {
   onChange: (value: string) => void;
   label: string;
   placeholder: string;
+  required?: boolean;
 }
 
 export default function CustomDropdown({ 
@@ -21,7 +22,8 @@ export default function CustomDropdown({
   value, 
   onChange, 
   label, 
-  placeholder 
+  placeholder,
+  required = false
 }: CustomDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   
@@ -34,7 +36,23 @@ export default function CustomDropdown({
 
   return (
     <div className="relative">
-      <label className="block text-subheading text-sm font-medium mb-2 tracking-wide">{label}</label>
+      <style jsx>{`
+        .dropdown-scroll::-webkit-scrollbar {
+          width: 6px;
+        }
+        .dropdown-scroll::-webkit-scrollbar-track {
+          background: #1F2937;
+          border-radius: 3px;
+        }
+        .dropdown-scroll::-webkit-scrollbar-thumb {
+          background: #4B5563;
+          border-radius: 3px;
+        }
+        .dropdown-scroll::-webkit-scrollbar-thumb:hover {
+          background: #6B7280;
+        }
+      `}</style>
+      <label className="block text-subheading text-sm font-medium mb-2 tracking-wide">{label} {required && <span className="text-red-400">*</span>}</label>
       
       {/* Dropdown Button */}
       <motion.button
@@ -66,7 +84,11 @@ export default function CustomDropdown({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: -10, scale: 0.95 }}
             transition={{ duration: 0.2, ease: "easeOut" }}
-            className="absolute z-[9999] w-full mt-2 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl max-h-80 overflow-y-auto"
+            className="absolute z-[9999] w-full mt-2 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl max-h-80 overflow-y-auto dropdown-scroll"
+            style={{
+              scrollbarWidth: 'thin',
+              scrollbarColor: '#4B5563 #1F2937'
+            }}
           >
             {options.map((option, index) => (
               <motion.button

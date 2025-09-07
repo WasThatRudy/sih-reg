@@ -37,7 +37,7 @@ export function validateTeamRegistration(data: TeamRegistrationData): {
   } else {
     // Check exact count
     if (data.members.length !== 5) {
-      errors.push("Team must have exactly 5 members");
+      errors.push("Team must have exactly 5 members (excluding leader)");
     }
 
     // Validate each member
@@ -238,7 +238,7 @@ export const validateEmail = (email: string): boolean => {
 };
 
 export const validatePhone = (phone: string): boolean => {
-  return PHONE_REGEX.test(phone.replace(/\s+/g, ''));
+  return PHONE_REGEX.test(phone.replace(/\s+/g, ""));
 };
 
 export const validateName = (name: string): boolean => {
@@ -274,7 +274,7 @@ export const validateBranch = (branch: string): boolean => {
     "Medical Electronics Engineering",
     "Robotics and Artificial Intelligence",
   ];
-  
+
   return validBranches.includes(branch.trim());
 };
 
@@ -283,9 +283,9 @@ export const isRequired = (value: string): boolean => {
 };
 
 export const formatPhoneNumber = (phone: string): string => {
-  const cleaned = phone.replace(/\D/g, '');
+  const cleaned = phone.replace(/\D/g, "");
   if (cleaned.length === 10) {
-    return cleaned.replace(/(\d{5})(\d{5})/, '$1 $2');
+    return cleaned.replace(/(\d{5})(\d{5})/, "$1 $2");
   }
   return phone;
 };
@@ -296,33 +296,33 @@ export const getValidationMessage = (field: string, value: string): string => {
   }
 
   switch (field.toLowerCase()) {
-    case 'email':
+    case "email":
       if (!validateEmail(value)) {
-        return 'Please enter a valid email address';
+        return "Please enter a valid email address";
       }
       break;
-    case 'phone':
+    case "phone":
       if (!validatePhone(value)) {
-        return 'Please enter a valid 10-digit phone number';
+        return "Please enter a valid 10-digit phone number";
       }
       break;
-    case 'name':
+    case "name":
       if (!validateName(value)) {
-        return 'Name should contain only letters, spaces, dots, and apostrophes';
+        return "Name should contain only letters, spaces, dots, and apostrophes";
       }
       break;
-    case 'team name':
+    case "team name":
       if (!validateTeamName(value)) {
-        return 'Team name should be 3-50 characters long';
+        return "Team name should be 3-50 characters long";
       }
       break;
-    case 'branch':
+    case "branch":
       if (!validateBranch(value)) {
-        return 'Please select a valid branch from the dropdown';
+        return "Please select a valid branch from the dropdown";
       }
       break;
   }
-  return '';
+  return "";
 };
 
 // Validation for checking duplicate emails and phone numbers across team leader and members
@@ -337,13 +337,15 @@ export interface TeamFormData {
   }>;
 }
 
-export const validateNoDuplicates = (formData: TeamFormData): {
+export const validateNoDuplicates = (
+  formData: TeamFormData
+): {
   emailDuplicates: { [key: string]: string };
   phoneDuplicates: { [key: string]: string };
 } => {
   const emailDuplicates: { [key: string]: string } = {};
   const phoneDuplicates: { [key: string]: string } = {};
-  
+
   // Collect all emails and phones with their sources
   const emailMap = new Map<string, string[]>();
   const phoneMap = new Map<string, string[]>();
@@ -352,26 +354,26 @@ export const validateNoDuplicates = (formData: TeamFormData): {
   if (formData.teamLeader.email && formData.teamLeader.email.trim()) {
     const email = formData.teamLeader.email.toLowerCase().trim();
     if (!emailMap.has(email)) emailMap.set(email, []);
-    emailMap.get(email)?.push('team leader');
+    emailMap.get(email)?.push("team leader");
   }
   if (formData.teamLeader.phone && formData.teamLeader.phone.trim()) {
-    const phone = formData.teamLeader.phone.replace(/\s+/g, '');
+    const phone = formData.teamLeader.phone.replace(/\s+/g, "");
     if (!phoneMap.has(phone)) phoneMap.set(phone, []);
-    phoneMap.get(phone)?.push('team leader');
+    phoneMap.get(phone)?.push("team leader");
   }
 
   // Add member emails and phones
   formData.members.forEach((member, index) => {
     const memberKey = `member ${index + 1}`;
-    
+
     if (member.email && member.email.trim()) {
       const email = member.email.toLowerCase().trim();
       if (!emailMap.has(email)) emailMap.set(email, []);
       emailMap.get(email)?.push(memberKey);
     }
-    
+
     if (member.phone && member.phone.trim()) {
-      const phone = member.phone.replace(/\s+/g, '');
+      const phone = member.phone.replace(/\s+/g, "");
       if (!phoneMap.has(phone)) phoneMap.set(phone, []);
       phoneMap.get(phone)?.push(memberKey);
     }
@@ -380,18 +382,22 @@ export const validateNoDuplicates = (formData: TeamFormData): {
   // Find duplicates and create error messages for each source
   emailMap.forEach((sources, email) => {
     if (sources.length > 1) {
-      sources.forEach(source => {
-        const otherSources = sources.filter(s => s !== source);
-        emailDuplicates[source] = `This email is also used by ${otherSources.join(' and ')}`;
+      sources.forEach((source) => {
+        const otherSources = sources.filter((s) => s !== source);
+        emailDuplicates[
+          source
+        ] = `This email is also used by ${otherSources.join(" and ")}`;
       });
     }
   });
 
   phoneMap.forEach((sources, phone) => {
     if (sources.length > 1) {
-      sources.forEach(source => {
-        const otherSources = sources.filter(s => s !== source);
-        phoneDuplicates[source] = `This phone number is also used by ${otherSources.join(' and ')}`;
+      sources.forEach((source) => {
+        const otherSources = sources.filter((s) => s !== source);
+        phoneDuplicates[
+          source
+        ] = `This phone number is also used by ${otherSources.join(" and ")}`;
       });
     }
   });

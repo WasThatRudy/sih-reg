@@ -1,73 +1,50 @@
 import { NextRequest } from "next/server";
-import jwt from "jsonwebtoken";
-import { Admin } from "../../models/Admin";
-import dbConnect from "../mongodb";
 
 export interface AdminAuthenticatedRequest extends NextRequest {
   admin?: {
-    _id: string;
     email: string;
+    isAuthenticated: boolean;
   };
 }
 
-export interface JWTPayload {
-  adminId: string;
-  email: string;
-  role: string;
-  iat?: number;
-  exp?: number;
-}
-
-/**
- * Verify JWT token and get admin from database
- */
 export async function verifyAdminAuth(
   request: NextRequest
 ): Promise<AdminAuthenticatedRequest> {
   try {
-    await dbConnect();
-
     const authHeader = request.headers.get("authorization");
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      throw new Error("No token provided");
+
+    if (!authHeader || !authHeader.startsWith("Basic ")) {
+      throw new Error("No admin credentials provided");
     }
 
-    const token = authHeader.split(" ")[1];
+    // Extract Basic auth credentials
+    const base64Credentials = authHeader.split(" ")[1];
+    const credentials = Buffer.from(base64Credentials, "base64").toString(
+      "ascii"
+    );
+    const [email, password] = credentials.split(":");
 
-    // Verify JWT token
-    try {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET!, {
-        algorithms: ['HS256'] // Specify the algorithm for admin JWT tokens
-      }) as JWTPayload;
-      
-      if (decoded.role !== "admin") {
-        throw new Error("Admin access required");
-      }
+    // Get admin credentials from environment
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminPassword = process.env.ADMIN_PASSWORD;
 
-      // Get admin from database
-      const admin = await Admin.findById(decoded.adminId).select("-passwordHash");
-      if (!admin) {
-        throw new Error("Admin not found");
-      }
+    if (!adminEmail || !adminPassword) {
+      throw new Error("Admin credentials not configured");
+    }
 
-      // Add admin to request
+    // Verify credentials
+    if (email === adminEmail && password === adminPassword) {
       const authenticatedRequest = request as AdminAuthenticatedRequest;
       authenticatedRequest.admin = {
-        _id: admin._id.toString(),
-        email: admin.email,
+        email: adminEmail,
+        isAuthenticated: true,
       };
-
       return authenticatedRequest;
-    } catch (jwtError) {
-      // Check if this might be a Firebase token (different algorithm/structure)
-      if (jwtError instanceof Error && jwtError.message.includes('invalid algorithm')) {
-        throw new Error("Firebase token provided to admin endpoint - use admin JWT token");
-      }
-      console.error("JWT verification failed:", jwtError);
-      throw new Error("Invalid admin JWT token");
+    } else {
+      throw new Error("Invalid admin credentials");
     }
   } catch (error) {
     console.error("Admin auth verification error:", error);
-    throw new Error("Authentication failed");
+    throw new Error("Admin authentication failed");
   }
 }

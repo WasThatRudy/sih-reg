@@ -8,7 +8,6 @@ interface AccordionSectionProps {
   isUnlocked: boolean;
   isOpen: boolean;
   onToggle: () => void;
-  status: 'locked' | 'required' | 'optional' | 'completed';
   children: React.ReactNode;
   allowOverflow?: boolean;
 }
@@ -20,29 +19,9 @@ export default function AccordionSection({
   isUnlocked,
   isOpen,
   onToggle,
-  status,
   children,
   allowOverflow = false
 }: AccordionSectionProps) {
-  const getStatusText = () => {
-    switch (status) {
-      case 'locked': return 'Locked';
-      case 'required': return '';
-      case 'optional': return 'Optional';
-      case 'completed': return 'Completed';
-      default: return 'Required';
-    }
-  };
-
-  const getStatusColor = () => {
-    switch (status) {
-      case 'completed': return 'text-heading';
-      case 'required': return 'text-gray-400';
-      case 'optional': return 'text-gray-400';
-      case 'locked': return 'text-gray-600';
-      default: return 'text-gray-400';
-    }
-  };
 
   const getStepIndicatorStyle = () => {
     if (isComplete) {
@@ -77,9 +56,6 @@ export default function AccordionSection({
           }`}>{title}</h3>
         </div>
         <div className="flex items-center gap-3">
-          <div className={`text-sm font-medium tracking-wide ${getStatusColor()}`}>
-            {getStatusText()}
-          </div>
           {isUnlocked && (
             <motion.svg
               className="w-5 h-5 text-gray-400"

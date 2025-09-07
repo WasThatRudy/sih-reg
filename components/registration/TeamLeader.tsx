@@ -91,6 +91,7 @@ export default function TeamLeader({ teamLeader, onInputChange, isDataFromAuth =
             value={teamLeader.year}
             onChange={(value) => onInputChange('teamLeader', 'year', value)}
             label="Year of Study"
+            required
           />
         </div>
         <div>
@@ -100,6 +101,7 @@ export default function TeamLeader({ teamLeader, onInputChange, isDataFromAuth =
             onChange={(value) => onInputChange('teamLeader', 'branch', value)}
             label="Branch"
             placeholder="Select your branch"
+            required
           />
         </div>
         <div>
@@ -111,6 +113,7 @@ export default function TeamLeader({ teamLeader, onInputChange, isDataFromAuth =
             showOtherInput={true}
             otherValue={teamLeader.otherGender || ''}
             onOtherChange={(value) => onInputChange('teamLeader', 'otherGender', value)}
+            required
           />
         </div>
       </div>

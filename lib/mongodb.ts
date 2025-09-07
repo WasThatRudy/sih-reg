@@ -29,10 +29,12 @@ if (!global.mongoose) {
 
 async function dbConnect(): Promise<typeof mongoose> {
   if (cached.conn) {
+    console.log("🔗 Using cached MongoDB connection");
     return cached.conn;
   }
 
   if (!cached.promise) {
+    console.log("🔗 Creating new MongoDB connection...");
     // Simple MongoDB connection options
     const opts = {
       bufferCommands: false,
@@ -40,6 +42,7 @@ async function dbConnect(): Promise<typeof mongoose> {
 
     cached.promise = mongoose.connect(MONGODB_URI, opts).then((mongoose) => {
       console.log("✅ MongoDB connected successfully");
+      console.log("📊 Connection state:", mongoose.connection.readyState);
       return mongoose;
     });
   }

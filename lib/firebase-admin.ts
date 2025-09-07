@@ -6,16 +6,25 @@ let firebaseInitialized = false;
 if (!admin.apps.length && process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
   try {
     const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
-    
+
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
       projectId: process.env.FIREBASE_PROJECT_ID,
     });
 
     firebaseInitialized = true;
+    console.log("✅ Firebase Admin initialized successfully");
+    console.log("📋 Project ID:", process.env.FIREBASE_PROJECT_ID);
+    console.log("📋 Service account type:", serviceAccount.type);
+    console.log("📋 Service account project:", serviceAccount.project_id);
   } catch (error) {
     console.error("❌ Failed to initialize Firebase Admin:", error);
+    firebaseInitialized = false;
   }
+} else if (!process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+  console.warn(
+    "⚠️ Firebase service account key not provided. Admin features will be disabled."
+  );
 }
 
 export const auth = firebaseInitialized ? admin.auth() : null;

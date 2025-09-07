@@ -1,12 +1,17 @@
 'use client';
+// IMPORT THE REQUIRED HOOKS
 import { motion } from 'framer-motion';
 import Image from 'next/image';
 import Link from 'next/link';
 import { useAuth } from '@/lib/context/AuthContext';
 import StatusBanner from './StatusBanner';
+import { useState, useEffect } from 'react';
 
 export default function Hero() {
   const { user, hasTeam } = useAuth();
+
+  // NEW: Add state to track the arrow's visibility
+  const [showArrow, setShowArrow] = useState(true);
 
   const getStartedLink = () => {
     if (!user) return '/login';
@@ -20,11 +25,29 @@ export default function Hero() {
     return 'Register Team';
   };
 
+  // NEW: Add an effect to listen to the scroll event
+  useEffect(() => {
+    const handleScroll = () => {
+      // Hide arrow if scrolled more than 100px, otherwise show it
+      if (window.scrollY > 100) {
+        setShowArrow(false);
+      } else {
+        setShowArrow(true);
+      }
+    };
+
+    // Add the event listener when the component mounts
+    window.addEventListener('scroll', handleScroll);
+
+    // Clean up the event listener when the component unmounts
+    return () => {
+      window.removeEventListener('scroll', handleScroll);
+    };
+  }, []); // Empty dependency array means this effect runs only once on mount
+
   return (
-    // CHANGE 1: The outer section is now just a simple flex container.
-    // The centering logic is moved to the child div.
     <section className="relative min-h-screen flex bg-background overflow-hidden">
-      {/* Animated background elements (unchanged) */}
+      {/* Animated background elements */}
       <motion.div
         className="absolute inset-0"
         initial={{ opacity: 0 }}
@@ -35,10 +58,6 @@ export default function Hero() {
         <div className="absolute bottom-1/4 right-1/4 w-48 h-48 sm:w-72 sm:h-72 md:w-96 md:h-96 bg-subheading/5 rounded-full blur-3xl"></div>
       </motion.div>
 
-      {/* CHANGE 2: Added `m-auto` to this container.
-          - `m-auto` makes the div center itself perfectly in the parent (both vertically and horizontally).
-          - Added `py-20` to ensure there's always some padding even when it has to scroll.
-      */}
       <div className="relative z-10 text-center px-4 sm:px-6 max-w-8xl m-auto py-20">
         {/* Logo */}
         <motion.div
@@ -94,14 +113,12 @@ export default function Hero() {
         >
           <div className="relative inline-block group mt-3">
             <div className="absolute inset-0 bg-gradient-to-r from-heading/20 to-subheading/20 rounded-full blur-lg group-hover:blur-xl transition-all duration-300"></div>
-
             <div className="relative px-4 py-2 sm:px-6 sm:py-3 md:px-8 md:py-4 bg-gradient-to-r from-heading/5 via-background to-subheading/5 rounded-full border border-heading/30 backdrop-blur-sm shadow-lg group-hover:shadow-xl transition-all duration-300">
               <div className="absolute -top-1 -left-1 w-3 h-3 bg-heading/40 rounded-full animate-pulse"></div>
               <div
                 className="absolute -bottom-1 -right-1 w-2 h-2 bg-subheading/40 rounded-full animate-pulse"
                 style={{ animationDelay: '0.5s' }}
               ></div>
-
               <div className="flex items-center gap-2 sm:gap-3">
                 <svg
                   className="w-4 h-4 sm:w-5 sm:h-5 text-heading/60"
@@ -151,60 +168,47 @@ export default function Hero() {
       {/* Floating elements */}
       <motion.div
         className="absolute top-16 sm:top-20 left-6 sm:left-10 w-1.5 h-1.5 sm:w-2 sm:h-2 bg-heading rounded-full"
-        animate={{
-          y: [0, -20, 0],
-          opacity: [0.3, 1, 0.3],
-        }}
-        transition={{
-          duration: 3,
-          repeat: Infinity,
-          ease: 'easeInOut',
-        }}
+        animate={{ y: [0, -20, 0], opacity: [0.3, 1, 0.3] }}
+        transition={{ duration: 3, repeat: Infinity, ease: 'easeInOut' }}
       />
       <motion.div
         className="absolute bottom-20 sm:bottom-32 right-8 sm:right-16 w-2 h-2 sm:w-3 sm:h-3 bg-subheading rounded-full"
-        animate={{
-          y: [0, 15, 0],
-          opacity: [0.4, 1, 0.4],
-        }}
-        transition={{
-          duration: 4,
-          repeat: Infinity,
-          ease: 'easeInOut',
-          delay: 1,
-        }}
+        animate={{ y: [0, 15, 0], opacity: [0.4, 1, 0.4] }}
+        transition={{ duration: 4, repeat: Infinity, ease: 'easeInOut', delay: 1 }}
       />
 
-      {/* Centered bouncing arrow to Instructions */}
-      <Link
-        href="#instructions"
-        className="absolute bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 text-subheading px-2 sm:px-4"
-      >
-        <motion.div
-          animate={{ y: [0, -8, 0] }}
-          transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
-          className="flex flex-col items-center gap-1 sm:gap-2"
+      {/* NEW: Conditionally render the arrow based on the `showArrow` state */}
+      {showArrow && (
+        <Link
+          href="#instructions"
+          className="fixed bottom-4 md:bottom-6 left-1/2 -translate-x-1/2 text-subheading px-2 sm:px-4 z-20"
         >
-          <span className="text-xs sm:text-sm md:text-base text-center leading-tight">
-            <span className="block sm:inline">please read instructions</span>
-            <span className="block sm:inline sm:ml-1">before registering</span>
-          </span>
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            fill="none"
-            viewBox="0 0 24 24"
-            strokeWidth={1.5}
-            stroke="currentColor"
-            className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6"
+          <motion.div
+            animate={{ y: [0, -8, 0] }}
+            transition={{ duration: 1.2, repeat: Infinity, ease: 'easeInOut' }}
+            className="flex flex-col items-center gap-1 sm:gap-2"
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M6 9l6 6 6-6"
-            />
-          </svg>
-        </motion.div>
-      </Link>
+            <span className="text-xs sm:text-sm md:text-base text-center leading-tight">
+              <span className="block sm:inline">please read instructions</span>
+              <span className="block sm:inline sm:ml-1">before registering</span>
+            </span>
+            <svg
+              xmlns="http://www.w3.org/2000/svg"
+              fill="none"
+              viewBox="0 0 24 24"
+              strokeWidth={1.5}
+              stroke="currentColor"
+              className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 9l6 6 6-6"
+              />
+            </svg>
+          </motion.div>
+        </Link>
+      )}
     </section>
   );
 }

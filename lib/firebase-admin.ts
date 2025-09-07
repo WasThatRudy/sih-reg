@@ -14,6 +14,9 @@ if (!admin.apps.length && process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
 
     firebaseInitialized = true;
     console.log("✅ Firebase Admin initialized successfully");
+    console.log("📋 Project ID:", process.env.FIREBASE_PROJECT_ID);
+    console.log("📋 Service account type:", serviceAccount.type);
+    console.log("📋 Service account project:", serviceAccount.project_id);
   } catch (error) {
     console.error("❌ Failed to initialize Firebase Admin:", error);
     firebaseInitialized = false;

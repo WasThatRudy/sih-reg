@@ -5,7 +5,10 @@ import { Team, ITeamMember } from "../../../models/Team";
 import { ProblemStatement } from "../../../models/ProblemStatement";
 import { User } from "../../../models/User";
 import dbConnect from "../../../lib/mongodb";
-import { validateTeamRegistration, validateTeamMember } from "../../../lib/utils/validation";
+import {
+  validateTeamRegistration,
+  validateTeamMember,
+} from "../../../lib/utils/validation";
 import { sendTeamRegistrationEmail } from "../../../lib/utils/email";
 import mongoose from "mongoose";
 
@@ -63,16 +66,20 @@ export async function POST(request: NextRequest) {
           name: teamLeader.name,
           email: teamLeader.email,
           phone: teamLeader.phone,
-          college: teamLeader.college || "Dayananda Sagar College of Engineering",
+          college:
+            teamLeader.college || "Dayananda Sagar College of Engineering",
           year: teamLeader.year,
           branch: teamLeader.branch,
-          gender: teamLeader.gender?.toLowerCase() as "male" | "female" | "other",
+          gender: teamLeader.gender?.toLowerCase() as
+            | "male"
+            | "female"
+            | "other",
         },
         0 // Use 0 to indicate leader
       );
-      
+
       if (leaderErrors.length > 0) {
-        const formattedErrors = leaderErrors.map((error: string) => 
+        const formattedErrors = leaderErrors.map((error: string) =>
           error.replace("Member 0:", "Team Leader:")
         );
         return NextResponse.json(
@@ -119,13 +126,15 @@ export async function POST(request: NextRequest) {
     // Check for duplicate emails between leader and members
     if (teamLeader && teamMembers.length > 0) {
       const leaderEmail = teamLeader.email.toLowerCase();
-      const memberEmails = teamMembers.map(m => m.email.toLowerCase());
-      
+      const memberEmails = teamMembers.map((m) => m.email.toLowerCase());
+
       if (memberEmails.includes(leaderEmail)) {
         return NextResponse.json(
           {
             success: false,
-            errors: ["Team leader and members must have unique email addresses"],
+            errors: [
+              "Team leader and members must have unique email addresses",
+            ],
             error: "Duplicate email validation failed",
           },
           { status: 400 }

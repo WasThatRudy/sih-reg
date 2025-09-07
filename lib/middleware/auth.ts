@@ -50,8 +50,17 @@ export async function verifyAuth(
 
     // Verify Firebase token
     console.log("🔐 Verifying Firebase token...");
-    const decodedToken = await adminAuth.verifyIdToken(token);
+    const decodedToken = await adminAuth.verifyIdToken(token, true); // checkRevoked: true
     console.log("✅ Token verified, UID:", decodedToken.uid);
+    console.log(
+      "🕒 Token issued at:",
+      new Date(decodedToken.iat * 1000).toISOString()
+    );
+    console.log(
+      "🕒 Token expires at:",
+      new Date(decodedToken.exp * 1000).toISOString()
+    );
+    console.log("🕒 Current time:", new Date().toISOString());
 
     // Get user from database
     console.log("👤 Looking for user in database with UID:", decodedToken.uid);
@@ -84,6 +93,31 @@ export async function verifyAuth(
     return authenticatedRequest;
   } catch (error) {
     console.error("❌ Auth verification error:", error);
+
+    // More detailed error logging for Firebase authentication
+    if (error && typeof error === "object" && "code" in error) {
+      const firebaseError = error as { code: string; message: string };
+      console.error("🔥 Firebase error code:", firebaseError.code);
+      console.error("🔥 Firebase error message:", firebaseError.message);
+
+      switch (firebaseError.code) {
+        case "auth/id-token-expired":
+          console.error("🕒 Token has expired - need to refresh");
+          break;
+        case "auth/id-token-revoked":
+          console.error("🚫 Token has been revoked");
+          break;
+        case "auth/invalid-id-token":
+          console.error("⚠️ Token format is invalid");
+          break;
+        case "auth/user-disabled":
+          console.error("👤 User account is disabled");
+          break;
+        default:
+          console.error("❓ Unknown Firebase auth error");
+      }
+    }
+
     console.error("❌ Error details:", {
       message: error instanceof Error ? error.message : String(error),
       code:

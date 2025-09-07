@@ -19,7 +19,7 @@ interface ProblemStatement {
   description: string;
   domain: string;
   link: string;
-  teamCount: number;
+  availableSlots: number;
   maxTeams: number;
   isActive: boolean;
 }
@@ -565,6 +565,7 @@ export default function Registration() {
                       options={problemStatements.map((ps) => ({
                         value: ps._id,
                         label: `${ps.psNumber}: ${ps.title}`,
+                        description: `Available slots: ${ps.availableSlots}/${ps.maxTeams}`,
                       }))}
                       value={formData.problemStatement}
                       onChange={(value) =>

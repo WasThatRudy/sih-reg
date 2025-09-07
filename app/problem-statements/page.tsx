@@ -10,7 +10,7 @@ interface ProblemStatement {
   description: string;
   domain: string;
   link: string;
-  teamCount: number;
+  availableSlots: number;
   maxTeams: number;
   isActive: boolean;
 }
@@ -182,6 +182,16 @@ export default function ProblemStatements() {
                       </span>
                     ))}
                   </div>
+                  {/* Available Slots */}
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium border tracking-wide ${
+                    problem.availableSlots === 0 
+                      ? 'bg-red-500/10 text-red-400 border-red-500/20' 
+                      : problem.availableSlots <= problem.maxTeams * 0.2 
+                        ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
+                        : 'bg-green-500/10 text-green-400 border-green-500/20'
+                  }`}>
+                    Available: {problem.availableSlots}/{problem.maxTeams}
+                  </span>
                   {problem.link && (
                     <div className="flex flex-wrap gap-1">
                       {problem.link.split('/').map((part, index) => (
@@ -255,6 +265,16 @@ export default function ProblemStatements() {
                         </span>
                       ))}
                     </div>
+                    {/* Available Slots in Modal */}
+                    <span className={`px-3 py-1 rounded-full text-sm font-medium border tracking-wide ${
+                      selectedProblem.availableSlots === 0 
+                        ? 'bg-red-500/10 text-red-400 border-red-500/20' 
+                        : selectedProblem.availableSlots <= selectedProblem.maxTeams * 0.2 
+                          ? 'bg-yellow-500/10 text-yellow-400 border-yellow-500/20'
+                          : 'bg-green-500/10 text-green-400 border-green-500/20'
+                    }`}>
+                      Available: {selectedProblem.availableSlots}/{selectedProblem.maxTeams}
+                    </span>
                     {selectedProblem.link && (
                       <div className="flex flex-wrap gap-1">
                         {selectedProblem.link.split('/').map((part, index) => (

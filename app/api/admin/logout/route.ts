@@ -1,13 +1,9 @@
-import { NextRequest, NextResponse } from "next/server";
-import { verifyAdminAuth } from "../../../../lib/middleware/adminAuth";
+import { NextResponse } from "next/server";
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
-    // Verify admin authentication
-    await verifyAdminAuth(request);
-
-    // For JWT tokens, logout is handled client-side by removing the token
-    // But we can add server-side token blacklisting in the future if needed
+    // For basic auth, logout is handled client-side by clearing credentials
+    // No server-side session to invalidate
 
     return NextResponse.json({
       success: true,

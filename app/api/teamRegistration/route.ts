@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAuth } from "../../../lib/middleware/auth";
 import { verifyAdminAuth } from "../../../lib/middleware/adminAuth";
-import { Team } from "../../../models/Team";
+import { Team, ITeamMember } from "../../../models/Team";
 import { ProblemStatement } from "../../../models/ProblemStatement";
 import { User } from "../../../models/User";
 import dbConnect from "../../../lib/mongodb";
@@ -18,11 +18,11 @@ export async function POST(request: NextRequest) {
       const adminRequest = await verifyAdminAuth(request);
       if (adminRequest.admin) {
         return NextResponse.json(
-          { 
-            success: false, 
+          {
+            success: false,
             error: "Please logout as admin first to register as a team member",
             isAdmin: true,
-            adminEmail: adminRequest.admin.email
+            adminEmail: adminRequest.admin.email,
           },
           { status: 403 }
         );
@@ -54,18 +54,67 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json();
-    const { teamName, problemStatement, members } = body;
+    const { teamName, problemStatement, teamLeader, members } = body;
+
+    // Combine team leader and members into a single members array
+    // The team leader should be the first member in the array (total 5 members + 1 leader = 6 people)
+    const allMembers: ITeamMember[] = [];
+
+    // Add team leader as the first member if provided
+    if (teamLeader) {
+      allMembers.push({
+        name: teamLeader.name,
+        email: teamLeader.email,
+        phone: teamLeader.phone,
+        college: teamLeader.college || "Dayananda Sagar College of Engineering", // Default college
+        year: teamLeader.year,
+        branch: teamLeader.branch,
+        gender: teamLeader.gender?.toLowerCase() as "male" | "female" | "other", // Normalize case
+      });
+    }
+
+    // Add other members (should be 5 members to make total of 6 including leader)
+    if (members && Array.isArray(members)) {
+      // Filter out members with invalid/empty data and only take first 5 if team leader provided
+      const validMembers = members.filter(
+        (member) =>
+          member.name &&
+          member.email &&
+          member.phone &&
+          member.gender &&
+          member.gender.trim() !== ""
+      );
+
+      const maxMembers = teamLeader ? 5 : 6;
+      const membersToAdd = validMembers.slice(0, maxMembers);
+
+      membersToAdd.forEach((member) => {
+        allMembers.push({
+          name: member.name,
+          email: member.email,
+          phone: member.phone,
+          college: member.college || "Dayananda Sagar College of Engineering", // Default college
+          year: member.year,
+          branch: member.branch,
+          gender: member.gender?.toLowerCase() as "male" | "female" | "other", // Normalize case
+        });
+      });
+    }
 
     // Validate input data
     const validation = validateTeamRegistration({
       teamName,
       problemStatement,
-      members,
+      members: allMembers,
     });
 
     if (!validation.isValid) {
       return NextResponse.json(
-        { success: false, errors: validation.errors, error: "Validation failed" },
+        {
+          success: false,
+          errors: validation.errors,
+          error: "Validation failed",
+        },
         { status: 400 }
       );
     }
@@ -108,7 +157,7 @@ export async function POST(request: NextRequest) {
         const team = new Team({
           teamName: teamName.trim(),
           leader: user._id,
-          members,
+          members: allMembers,
           problemStatement,
           status: "registered",
           registrationDate: new Date(),
@@ -159,10 +208,10 @@ export async function POST(request: NextRequest) {
     console.error("Team registration error:", error);
 
     return NextResponse.json(
-      { 
-        success: false, 
+      {
+        success: false,
         error: "Failed to register team",
-        details: error instanceof Error ? error.message : 'Unknown error'
+        details: error instanceof Error ? error.message : "Unknown error",
       },
       { status: 500 }
     );
@@ -187,6 +236,7 @@ export async function GET(request: NextRequest) {
     // Get user's team if exists
     const team = await Team.findOne({ leader: user._id })
       .populate("problemStatement", "psNumber title description domain")
+      .populate("leader", "name email phone branch year gender")
       .lean();
 
     if (!team) {
@@ -205,6 +255,7 @@ export async function GET(request: NextRequest) {
       team: {
         _id: team._id,
         teamName: team.teamName,
+        leader: team.leader,
         members: team.members,
         problemStatement: team.problemStatement,
         status: team.status,

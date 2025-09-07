@@ -26,7 +26,7 @@ interface ProblemStatement {
 interface Team {
   _id: string;
   teamName: string;
-  leader: {
+  leader?: {
     name: string;
     email: string;
     phone: string;
@@ -220,7 +220,7 @@ export default function TeamInfo() {
                     Name
                   </label>
                   <p className="text-text bg-gray-800/30 border border-gray-600 rounded-lg px-4 py-3">
-                    {team.leader.name}
+                    {team.leader?.name || "N/A"}
                   </p>
                 </div>
                 <div>
@@ -228,7 +228,7 @@ export default function TeamInfo() {
                     Email
                   </label>
                   <p className="text-text bg-gray-800/30 border border-gray-600 rounded-lg px-4 py-3">
-                    {team.leader.email}
+                    {team.leader?.email || "N/A"}
                   </p>
                 </div>
                 <div>
@@ -236,7 +236,7 @@ export default function TeamInfo() {
                     Phone
                   </label>
                   <p className="text-text bg-gray-800/30 border border-gray-600 rounded-lg px-4 py-3">
-                    {team.leader.phone}
+                    {team.leader?.phone || "N/A"}
                   </p>
                 </div>
                 <div>
@@ -244,7 +244,7 @@ export default function TeamInfo() {
                     Branch
                   </label>
                   <p className="text-text bg-gray-800/30 border border-gray-600 rounded-lg px-4 py-3">
-                    {team.leader.branch}
+                    {team.leader?.branch || "N/A"}
                   </p>
                 </div>
                 <div>
@@ -252,7 +252,7 @@ export default function TeamInfo() {
                     Year
                   </label>
                   <p className="text-text bg-gray-800/30 border border-gray-600 rounded-lg px-4 py-3">
-                    {team.leader.year}
+                    {team.leader?.year || "N/A"}
                   </p>
                 </div>
                 <div>
@@ -260,7 +260,7 @@ export default function TeamInfo() {
                     Gender
                   </label>
                   <p className="text-text bg-gray-800/30 border border-gray-600 rounded-lg px-4 py-3">
-                    {team.leader.gender}
+                    {team.leader?.gender || "N/A"}
                   </p>
                 </div>
               </div>

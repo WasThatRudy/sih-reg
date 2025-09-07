@@ -135,7 +135,7 @@ const teamSchema = new Schema<ITeam>(
         validator: function (members: ITeamMember[]) {
           return members.length === 5;
         },
-        message: "Team must have exactly 5 members",
+        message: "Team must have exactly 5 members (excluding leader)",
       },
     },
     problemStatement: {

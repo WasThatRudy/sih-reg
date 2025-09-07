@@ -1,12 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
-import jwt from "jsonwebtoken";
-import { Admin } from "../../../../models/Admin";
-import dbConnect from "../../../../lib/mongodb";
 
 export async function POST(request: NextRequest) {
   try {
-    await dbConnect();
-
     const body = await request.json();
     const { email, password } = body;
 
@@ -18,53 +13,42 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Validate email format
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+    // Get admin credentials from environment
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+
+    if (!adminEmail || !adminPassword) {
       return NextResponse.json(
-        { success: false, error: "Valid email address is required" },
-        { status: 400 }
+        { success: false, error: "Admin credentials not configured" },
+        { status: 500 }
       );
     }
 
-    // Find admin by email
-    const admin = await Admin.findOne({ email: email.toLowerCase() });
+    // Verify credentials
+    if (
+      email.toLowerCase() === adminEmail.toLowerCase() &&
+      password === adminPassword
+    ) {
+      // Create basic auth token (base64 encoded email:password)
+      const credentials = Buffer.from(`${email}:${password}`).toString(
+        "base64"
+      );
 
-    if (!admin) {
+      return NextResponse.json({
+        success: true,
+        message: "Admin login successful",
+        token: credentials,
+        admin: {
+          email: adminEmail,
+          isAuthenticated: true,
+        },
+      });
+    } else {
       return NextResponse.json(
         { success: false, error: "Invalid email or password" },
         { status: 401 }
       );
     }
-
-    // Verify password
-    const isPasswordValid = await admin.comparePassword(password);
-    if (!isPasswordValid) {
-      return NextResponse.json(
-        { success: false, error: "Invalid email or password" },
-        { status: 401 }
-      );
-    }
-
-    // Generate JWT token (expires in 1 month)
-    const token = jwt.sign(
-      {
-        adminId: admin._id.toString(),
-        email: admin.email,
-        role: "admin",
-      },
-      process.env.JWT_SECRET!,
-      { expiresIn: "30d" }
-    );
-
-    return NextResponse.json({
-      success: true,
-      message: "Admin login successful",
-      token,
-      admin: {
-        _id: admin._id,
-        email: admin.email,
-      },
-    });
   } catch (error: unknown) {
     console.error("Admin login error:", error);
 

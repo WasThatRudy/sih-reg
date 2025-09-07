@@ -136,6 +136,28 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       const { user } = await createUserWithEmailAndPassword(auth, email, password);
       await updateProfile(user, { displayName });
+      
+      // Sync user with backend after signup
+      if (user) {
+        try {
+          const token = await user.getIdToken();
+          await fetch('/api/auth/verify', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${token}`
+            },
+            body: JSON.stringify({
+              name: displayName || '',
+              email: user.email || '',
+              firebaseUid: user.uid
+            })
+          });
+        } catch (syncError) {
+          console.error('Error syncing user with backend:', syncError);
+          // Don't throw here as the user is still authenticated
+        }
+      }
     } catch (error) {
       setLoading(false);
       throw error;

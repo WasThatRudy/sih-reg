@@ -71,37 +71,27 @@ const userSchema = new Schema<IUser, IUserModel, IUserMethods>(
     phone: {
       type: String,
       trim: true,
-      required: function(this: IUser) {
-        return this.role === "leader"; // Required only for team leaders
-      },
+      required: false, // Made optional for initial signup
     },
     gender: {
       type: String,
       enum: ["male", "female", "other"],
-      required: function(this: IUser) {
-        return this.role === "leader"; // Required only for team leaders
-      },
+      required: false, // Made optional for initial signup
     },
     college: {
       type: String,
       trim: true,
-      required: function(this: IUser) {
-        return this.role === "leader"; // Required only for team leaders
-      },
+      required: false, // Made optional for initial signup
     },
     year: {
       type: String,
       trim: true,
-      required: function(this: IUser) {
-        return this.role === "leader"; // Required only for team leaders
-      },
+      required: false, // Made optional for initial signup
     },
     branch: {
       type: String,
       trim: true,
-      required: function(this: IUser) {
-        return this.role === "leader"; // Required only for team leaders
-      },
+      required: false, // Made optional for initial signup
     },
   },
   {

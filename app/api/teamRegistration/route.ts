@@ -5,7 +5,7 @@ import { Team, ITeamMember } from "../../../models/Team";
 import { ProblemStatement } from "../../../models/ProblemStatement";
 import { User } from "../../../models/User";
 import dbConnect from "../../../lib/mongodb";
-import { validateTeamRegistration } from "../../../lib/utils/validation";
+import { validateTeamRegistration, validateTeamMember } from "../../../lib/utils/validation";
 import { sendTeamRegistrationEmail } from "../../../lib/utils/email";
 import mongoose from "mongoose";
 
@@ -56,26 +56,42 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { teamName, problemStatement, teamLeader, members } = body;
 
-    // Combine team leader and members into a single members array
-    // The team leader should be the first member in the array (total 5 members + 1 leader = 6 people)
-    const allMembers: ITeamMember[] = [];
-
-    // Add team leader as the first member if provided
+    // Validate team leader data if provided
     if (teamLeader) {
-      allMembers.push({
-        name: teamLeader.name,
-        email: teamLeader.email,
-        phone: teamLeader.phone,
-        college: teamLeader.college || "Dayananda Sagar College of Engineering", // Default college
-        year: teamLeader.year,
-        branch: teamLeader.branch,
-        gender: teamLeader.gender?.toLowerCase() as "male" | "female" | "other", // Normalize case
-      });
+      const leaderErrors = validateTeamMember(
+        {
+          name: teamLeader.name,
+          email: teamLeader.email,
+          phone: teamLeader.phone,
+          college: teamLeader.college || "Dayananda Sagar College of Engineering",
+          year: teamLeader.year,
+          branch: teamLeader.branch,
+          gender: teamLeader.gender?.toLowerCase() as "male" | "female" | "other",
+        },
+        0 // Use 0 to indicate leader
+      );
+      
+      if (leaderErrors.length > 0) {
+        const formattedErrors = leaderErrors.map((error: string) => 
+          error.replace("Member 0:", "Team Leader:")
+        );
+        return NextResponse.json(
+          {
+            success: false,
+            errors: formattedErrors,
+            error: "Team leader validation failed",
+          },
+          { status: 400 }
+        );
+      }
     }
 
-    // Add other members (should be 5 members to make total of 6 including leader)
+    // Prepare team members array (should contain exactly 5 members, excluding leader)
+    const teamMembers: ITeamMember[] = [];
+
+    // Add other members (should be exactly 5 members)
     if (members && Array.isArray(members)) {
-      // Filter out members with invalid/empty data and only take first 5 if team leader provided
+      // Filter out members with invalid/empty data and only take first 5
       const validMembers = members.filter(
         (member) =>
           member.name &&
@@ -85,11 +101,10 @@ export async function POST(request: NextRequest) {
           member.gender.trim() !== ""
       );
 
-      const maxMembers = teamLeader ? 5 : 6;
-      const membersToAdd = validMembers.slice(0, maxMembers);
+      const membersToAdd = validMembers.slice(0, 5);
 
       membersToAdd.forEach((member) => {
-        allMembers.push({
+        teamMembers.push({
           name: member.name,
           email: member.email,
           phone: member.phone,
@@ -101,11 +116,28 @@ export async function POST(request: NextRequest) {
       });
     }
 
+    // Check for duplicate emails between leader and members
+    if (teamLeader && teamMembers.length > 0) {
+      const leaderEmail = teamLeader.email.toLowerCase();
+      const memberEmails = teamMembers.map(m => m.email.toLowerCase());
+      
+      if (memberEmails.includes(leaderEmail)) {
+        return NextResponse.json(
+          {
+            success: false,
+            errors: ["Team leader and members must have unique email addresses"],
+            error: "Duplicate email validation failed",
+          },
+          { status: 400 }
+        );
+      }
+    }
+
     // Validate input data
     const validation = validateTeamRegistration({
       teamName,
       problemStatement,
-      members: allMembers,
+      members: teamMembers,
     });
 
     if (!validation.isValid) {
@@ -157,7 +189,7 @@ export async function POST(request: NextRequest) {
         const team = new Team({
           teamName: teamName.trim(),
           leader: user._id,
-          members: allMembers,
+          members: teamMembers,
           problemStatement,
           status: "registered",
           registrationDate: new Date(),

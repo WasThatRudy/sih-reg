@@ -127,7 +127,7 @@ export async function POST(request: NextRequest) {
       assignedTo: assignedTo || [],
       dueDate: dueDate ? new Date(dueDate) : undefined,
       isActive: true,
-      createdBy: adminUser._id,
+      createdBy: adminUser.email, // Use email instead of _id since admin is not from database
     });
 
     await task.save();

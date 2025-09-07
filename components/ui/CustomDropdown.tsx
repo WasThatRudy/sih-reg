@@ -14,6 +14,7 @@ interface CustomDropdownProps {
   onChange: (value: string) => void;
   label: string;
   placeholder: string;
+  required?: boolean;
 }
 
 export default function CustomDropdown({ 
@@ -21,7 +22,8 @@ export default function CustomDropdown({
   value, 
   onChange, 
   label, 
-  placeholder 
+  placeholder,
+  required = false
 }: CustomDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
   
@@ -34,7 +36,7 @@ export default function CustomDropdown({
 
   return (
     <div className="relative">
-      <label className="block text-subheading text-sm font-medium mb-2 tracking-wide">{label}</label>
+      <label className="block text-subheading text-sm font-medium mb-2 tracking-wide">{label} {required && <span className="text-red-400">*</span>}</label>
       
       {/* Dropdown Button */}
       <motion.button

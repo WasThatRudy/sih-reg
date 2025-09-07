@@ -49,6 +49,7 @@ export default function TeamMembers({ members, onInputChange, getEmailError, get
                 onChange={(value) => onInputChange('members', 'name', value, index)}
                 placeholder="Enter full name"
                 validationType="name"
+                required
               />
               <ValidatedInput
                 label="Email"
@@ -58,6 +59,7 @@ export default function TeamMembers({ members, onInputChange, getEmailError, get
                 placeholder="Enter email address"
                 validationType="email"
                 error={getEmailError ? getEmailError(index) : ''}
+                required
               />
               <ValidatedInput
                 label="Phone"
@@ -67,6 +69,7 @@ export default function TeamMembers({ members, onInputChange, getEmailError, get
                 placeholder="Enter phone number"
                 validationType="phone"
                 error={getPhoneError ? getPhoneError(index) : ''}
+                required
               />
               <div>
                 <Slider
@@ -74,6 +77,7 @@ export default function TeamMembers({ members, onInputChange, getEmailError, get
                     value={member.year}
                     onChange={(value) => onInputChange('members', 'year', value, index)}
                     label="Year of Study"
+                    required
                 />
               </div>
               <div>
@@ -85,6 +89,7 @@ export default function TeamMembers({ members, onInputChange, getEmailError, get
                     showOtherInput={true}
                     otherValue={member.otherGender || ''}
                     onOtherChange={(value) => onInputChange('members', 'otherGender', value, index)}
+                    required
                 />
               </div>
               <div>
@@ -94,6 +99,7 @@ export default function TeamMembers({ members, onInputChange, getEmailError, get
                   onChange={(value) => onInputChange('members', 'branch', value, index)}
                   label="Branch"
                   placeholder="Select your branch"
+                  required
                 />
               </div>
             </div>

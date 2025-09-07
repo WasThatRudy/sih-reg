@@ -12,6 +12,7 @@ interface SliderProps {
   value: string;
   onChange: (value: string) => void;
   label: string;
+  required?: boolean;
   showOtherInput?: boolean;
   otherValue?: string;
   onOtherChange?: (value: string) => void;
@@ -22,6 +23,7 @@ export default function Slider({
   value, 
   onChange, 
   label, 
+  required = false,
   showOtherInput = false,
   otherValue = '',
   onOtherChange 
@@ -41,7 +43,7 @@ export default function Slider({
 
   return (
     <div>
-      <label className="block text-subheading text-sm font-medium mb-2 tracking-wide">{label}</label>
+      <label className="block text-subheading text-sm font-medium mb-2 tracking-wide">{label} {required && <span className="text-red-400">*</span>}</label>
       
       {/* Slider Container */}
       <div className="relative bg-gray-800/50 border border-gray-700 rounded-lg p-1">

@@ -8,7 +8,7 @@ interface AccordionSectionProps {
   isUnlocked: boolean;
   isOpen: boolean;
   onToggle: () => void;
-  status: 'locked' | 'required' | 'optional' | 'completed';
+  status: 'locked' | 'required' | 'completed';
   children: React.ReactNode;
   allowOverflow?: boolean;
 }
@@ -28,7 +28,6 @@ export default function AccordionSection({
     switch (status) {
       case 'locked': return 'Locked';
       case 'required': return '';
-      case 'optional': return 'Optional';
       case 'completed': return 'Completed';
       default: return 'Required';
     }
@@ -38,7 +37,6 @@ export default function AccordionSection({
     switch (status) {
       case 'completed': return 'text-heading';
       case 'required': return 'text-gray-400';
-      case 'optional': return 'text-gray-400';
       case 'locked': return 'text-gray-600';
       default: return 'text-gray-400';
     }

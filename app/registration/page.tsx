@@ -569,6 +569,7 @@ export default function Registration() {
                       }
                       label="Problem Statement"
                       placeholder="Select a problem statement"
+                      required
                     />
                   </div>
                 </div>
@@ -607,7 +608,7 @@ export default function Registration() {
                 isUnlocked={true}
                 isOpen={openSections[3]}
                 onToggle={() => toggleSection(3)}
-                status={isTeamMembersComplete ? "completed" : "optional"}
+                status={isTeamMembersComplete ? "completed" : "required"}
                 allowOverflow={true}
               >
                 <TeamMembers

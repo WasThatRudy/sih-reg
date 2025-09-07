@@ -4,6 +4,7 @@ import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/context/AuthContext";
+import { ExternalLink, FileText, Download, MessageCircle, Calendar, MapPin } from "lucide-react";
 
 interface TeamMember {
   name: string;
@@ -340,19 +341,236 @@ export default function TeamInfo() {
               </div>
             </motion.div>
 
-            {/* Actions */}
+            {/* You're All Set Section */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.5 }}
+              className="bg-gradient-to-r from-green-900/20 to-blue-900/20 border border-green-500/30 rounded-2xl p-8 text-center"
+            >
+              <div className="mb-6">
+                <div className="w-16 h-16 bg-green-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <svg className="w-8 h-8 text-green-400" fill="currentColor" viewBox="0 0 20 20">
+                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                  </svg>
+                </div>
+                <h2 className="text-3xl font-display text-green-400 mb-4">
+                  You're All Set! 🎉
+                </h2>
+                <p className="text-green-200 font-body text-lg mb-6">
+                  Your team has been successfully registered for the Smart India Hackathon 2025 Internal Round.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div className="flex items-center justify-center gap-3 p-4 bg-gray-800/30 rounded-lg">
+                  <Calendar className="w-5 h-5 text-blue-400" />
+                  <div className="text-left">
+                    <p className="text-sm text-gray-400">Date</p>
+                    <p className="text-white font-medium">TBA</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-center gap-3 p-4 bg-gray-800/30 rounded-lg">
+                  <MapPin className="w-5 h-5 text-red-400" />
+                  <div className="text-left">
+                    <p className="text-sm text-gray-400">Venue</p>
+                    <p className="text-white font-medium">DSCE Campus</p>
+                  </div>
+                </div>
+                <div className="flex items-center justify-center gap-3 p-4 bg-gray-800/30 rounded-lg">
+                  <MessageCircle className="w-5 h-5 text-green-400" />
+                  <div className="text-left">
+                    <p className="text-sm text-gray-400">Updates</p>
+                    <p className="text-white font-medium">WhatsApp Group</p>
+                  </div>
+                </div>
+              </div>
+
+              <div className="text-center">
+                <p className="text-gray-300 font-body mb-4">
+                  Stay updated with all the latest information and announcements.
+                </p>
+                <p className="text-subheading text-sm font-body">
+                  Registration Date: {new Date(team.createdAt).toLocaleDateString()}
+                </p>
+              </div>
+            </motion.div>
+
+            {/* WhatsApp Group Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.6 }}
+              className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl p-8"
+            >
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-display text-heading mb-4">
+                  Join Our WhatsApp Group
+                </h2>
+                <p className="text-subheading font-body">
+                  Get real-time updates, announcements, and connect with other participants
+                </p>
+              </div>
+
+              <div className="flex flex-col md:flex-row items-center justify-center gap-8">
+                <div className="text-center">
+                  <div className="w-48 h-48 bg-white rounded-2xl p-4 mb-4 mx-auto shadow-2xl">
+                    <div className="w-full h-full bg-gray-100 rounded-lg flex items-center justify-center">
+                      <div className="text-center">
+                        <MessageCircle className="w-16 h-16 text-green-500 mx-auto mb-2" />
+                        <p className="text-sm text-gray-600 font-medium">WhatsApp QR Code</p>
+                        <p className="text-xs text-gray-500 mt-1">Scan to join group</p>
+                      </div>
+                    </div>
+                  </div>
+                  <p className="text-sm text-gray-400">
+                    Scan this QR code with your phone to join the group
+                  </p>
+                </div>
+
+                <div className="text-center md:text-left">
+                  <h3 className="text-lg font-semibold text-white mb-4">
+                    Why Join the Group?
+                  </h3>
+                  <ul className="space-y-3 text-gray-300">
+                    <li className="flex items-start gap-3">
+                      <div className="w-1.5 h-1.5 bg-green-400 rounded-full mt-2"></div>
+                      <span className="text-sm">Real-time updates and announcements</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <div className="w-1.5 h-1.5 bg-green-400 rounded-full mt-2"></div>
+                      <span className="text-sm">Connect with other participants</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <div className="w-1.5 h-1.5 bg-green-400 rounded-full mt-2"></div>
+                      <span className="text-sm">Get help and support from organizers</span>
+                    </li>
+                    <li className="flex items-start gap-3">
+                      <div className="w-1.5 h-1.5 bg-green-400 rounded-full mt-2"></div>
+                      <span className="text-sm">Important reminders and schedule updates</span>
+                    </li>
+                  </ul>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Important Documents Section */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.7 }}
+              className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl p-8"
+            >
+              <div className="text-center mb-8">
+                <h2 className="text-2xl font-display text-heading mb-4">
+                  Important Documents
+                </h2>
+                <p className="text-subheading font-body">
+                  Download these required documents for the hackathon
+                </p>
+              </div>
+
+              {/* Important Notice */}
+              <div className="mb-8 p-4 bg-amber-900/20 border border-amber-500/30 rounded-lg">
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 bg-amber-500/20 rounded-full flex items-center justify-center mt-0.5">
+                    <div className="w-2 h-2 bg-amber-500 rounded-full"></div>
+                  </div>
+                  <div>
+                    <h3 className="font-semibold text-amber-200 mb-2">Important Notice</h3>
+                    <p className="text-amber-100/80 text-sm leading-relaxed">
+                      The <strong>PPT template is mandatory</strong> for the actual hackathon presentation. 
+                      The guidelines are for your reference to understand the rules and requirements.
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              {/* Documents List */}
+              <div className="space-y-6">
+                {/* PPT Template */}
+                <motion.div
+                  className="flex items-center justify-between p-6 bg-gray-800/30 rounded-xl border border-gray-700 hover:border-heading/30 transition-all duration-300"
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-blue-500/20 rounded-lg flex items-center justify-center">
+                      <FileText className="w-6 h-6 text-blue-400" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-white mb-1">SIH 2025 Idea Presentation Format</h3>
+                      <p className="text-gray-400 text-sm">PowerPoint template for your hackathon presentation</p>
+                    </div>
+                  </div>
+                  <a
+                    href="https://www.sih.gov.in/letters/SIH2025-IDEA-Presentation-Format.pptx"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg transition-colors duration-200"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </motion.div>
+
+                {/* Guidelines */}
+                <motion.div
+                  className="flex items-center justify-between p-6 bg-gray-800/30 rounded-xl border border-gray-700 hover:border-heading/30 transition-all duration-300"
+                  whileHover={{ scale: 1.02 }}
+                  transition={{ type: 'spring', stiffness: 300, damping: 20 }}
+                >
+                  <div className="flex items-center gap-4">
+                    <div className="w-12 h-12 bg-green-500/20 rounded-lg flex items-center justify-center">
+                      <FileText className="w-6 h-6 text-green-400" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-white mb-1">SIH 2025 Official Guidelines</h3>
+                      <p className="text-gray-400 text-sm">Reference document for rules and requirements</p>
+                    </div>
+                  </div>
+                  <a
+                    href="https://sih.gov.in/letters/SIH2025-Guidelines-College-SPOC.pdf"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg transition-colors duration-200"
+                  >
+                    <Download className="w-4 h-4" />
+                    Download
+                    <ExternalLink className="w-4 h-4" />
+                  </a>
+                </motion.div>
+              </div>
+
+              {/* Additional Info */}
+              <div className="mt-8 p-4 bg-gray-800/20 rounded-lg border border-gray-700">
+                <div className="flex items-start gap-3">
+                  <div className="w-5 h-5 bg-blue-500/20 rounded-full flex items-center justify-center mt-0.5">
+                    <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-white mb-2">What to do with these documents?</h4>
+                    <ul className="text-gray-300 text-sm space-y-1">
+                      <li>• Use the PPT template for your hackathon presentation (mandatory)</li>
+                      <li>• Review the guidelines to understand rules and requirements</li>
+                      <li>• Follow the presentation format structure during the hackathon</li>
+                      <li>• Keep the template ready for the actual event</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+            </motion.div>
+
+            {/* Actions */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.8 }}
               className="text-center"
             >
               <p className="text-text font-body mb-4">
                 For any changes or queries, please contact the administrators.
-              </p>
-              <p className="text-subheading text-sm font-body">
-                Registration Date:{" "}
-                {new Date(team.createdAt).toLocaleDateString()}
               </p>
             </motion.div>
           </motion.div>

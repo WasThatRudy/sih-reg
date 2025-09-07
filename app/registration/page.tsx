@@ -541,7 +541,6 @@ export default function Registration() {
                 isUnlocked={true}
                 isOpen={openSections[1]}
                 onToggle={() => toggleSection(1)}
-                status={isTeamInfoComplete ? "completed" : "required"}
                 allowOverflow={true}
               >
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -582,7 +581,6 @@ export default function Registration() {
                 isUnlocked={true}
                 isOpen={openSections[2]}
                 onToggle={() => toggleSection(2)}
-                status={isTeamLeaderComplete ? "completed" : "required"}
                 allowOverflow={true}
               >
                 <TeamLeader
@@ -607,7 +605,6 @@ export default function Registration() {
                 isUnlocked={true}
                 isOpen={openSections[3]}
                 onToggle={() => toggleSection(3)}
-                status={isTeamMembersComplete ? "completed" : "required"}
                 allowOverflow={true}
               >
                 <TeamMembers

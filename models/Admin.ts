@@ -38,9 +38,7 @@ const adminSchema = new Schema<IAdmin, IAdminModel, IAdminMethods>(
 );
 
 // Add method to compare passwords
-adminSchema.methods.comparePassword = async function (
-  password: string
-): Promise<boolean> {
+adminSchema.methods.comparePassword = async function(password: string): Promise<boolean> {
   if (!this.passwordHash) {
     return false;
   }
@@ -48,5 +46,4 @@ adminSchema.methods.comparePassword = async function (
 };
 
 export const Admin: IAdminModel =
-  mongoose.models.Admin ||
-  mongoose.model<IAdmin, IAdminModel>("Admin", adminSchema);
+  mongoose.models.Admin || mongoose.model<IAdmin, IAdminModel>("Admin", adminSchema);

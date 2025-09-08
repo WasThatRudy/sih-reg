@@ -32,8 +32,8 @@ export default function AdminDashboard() {
           return;
         }
         
-        // Fetch teams stats
-        const teamsResponse = await fetch('/api/admin/teams', {
+        // Fetch teams stats (get total count without pagination limit)
+        const teamsResponse = await fetch('/api/admin/teams?limit=1000', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         
@@ -54,15 +54,33 @@ export default function AdminDashboard() {
             tasksResponse.json()
           ]);
 
-          const teamStats = teamsData.teams || [];
           const psStats = psData.problemStatements || [];
           const taskStats = tasksData.tasks || [];
 
+          // Fetch team status counts separately to get accurate counts for all teams
+          const [registeredResponse, selectedResponse, finalistResponse] = await Promise.all([
+            fetch('/api/admin/teams?status=registered&limit=1000', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            }),
+            fetch('/api/admin/teams?status=selected&limit=1000', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            }),
+            fetch('/api/admin/teams?status=finalist&limit=1000', {
+              headers: { 'Authorization': `Bearer ${token}` }
+            })
+          ]);
+
+          const [registeredData, selectedData, finalistData] = await Promise.all([
+            registeredResponse.json(),
+            selectedResponse.json(),
+            finalistResponse.json()
+          ]);
+
           setStats({
-            totalTeams: teamStats.length,
-            registeredTeams: teamStats.filter((t: { status: string }) => t.status === 'registered').length,
-            selectedTeams: teamStats.filter((t: { status: string }) => t.status === 'selected').length,
-            finalistTeams: teamStats.filter((t: { status: string }) => t.status === 'finalist').length,
+            totalTeams: teamsData.total || 0, // Use the total from API response instead of array length
+            registeredTeams: registeredData.total || 0,
+            selectedTeams: selectedData.total || 0,
+            finalistTeams: finalistData.total || 0,
             totalProblemStatements: psStats.length,
             activeProblemStatements: psStats.filter((ps: { isActive: boolean }) => ps.isActive).length,
             totalTasks: taskStats.length,

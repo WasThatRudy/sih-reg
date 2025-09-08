@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 "use client";
 import { useState } from "react";
 import { motion } from "framer-motion";
@@ -14,8 +15,9 @@ export default function Login() {
     password: "",
   });
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [error, setError] = useState('');
+  
   const { signIn, signInWithGoogle } = useAuth();
   const router = useRouter();
 
@@ -45,14 +47,19 @@ export default function Login() {
   };
 
   const handleGoogleSignIn = async () => {
-    setError("");
+    setError('');
+    setIsGoogleLoading(true);
     try {
       await signInWithGoogle();
-      router.push("/");
-    } catch (error: unknown) {
-      console.error("Google sign-in error:", error);
-      const errorCode = (error as { code?: string })?.code;
-      setError(getErrorMessage(errorCode));
+      router.push('/');
+    } catch (error: any) {
+      console.error('Google sign-in error:', error);
+      // Only show error if it's not a popup closed error
+      if (error?.code !== 'auth/popup-closed-by-user' && error?.code !== 'auth/cancelled-popup-request') {
+        setError(getErrorMessage(error.code));
+      }
+    } finally {
+      setIsGoogleLoading(false);
     }
   };
 
@@ -171,6 +178,7 @@ export default function Login() {
               <GoogleSignInButton
                 onSignIn={handleGoogleSignIn}
                 text="Sign in with Google"
+                isLoading={isGoogleLoading}
               />
 
               {/* Divider */}

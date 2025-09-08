@@ -65,23 +65,23 @@ export default function Instructions() {
             <ul className="space-y-5 text-gray-300">
               <li className="flex items-start gap-3">
                 <div className="w-1.5 h-1.5 bg-subheading/60 rounded-full mt-2"></div>
-                <span className="font-body tracking-wide">The number of teams reserved for a specific problem statement is 3. We encourage registering on the platform as soon as possible</span>
+                <span className="font-body tracking-wide">The number of teams reserved for a specific problem statement is 3. We encourage registering on the platform as soon as possible.</span>
               </li>
               <li className="flex items-start gap-3">
                 <div className="w-1.5 h-1.5 bg-subheading/60 rounded-full mt-2"></div>
-                <span className="font-body tracking-wide">Each team must be exactly 6 members, including atleast 1 female</span>
+                <span className="font-body tracking-wide">Each team must be exactly 6 members, including atleast 1 female.</span>
               </li>
               <li className="flex items-start gap-3">
                 <div className="w-1.5 h-1.5 bg-subheading/60 rounded-full mt-2"></div>
-                <span className="font-body tracking-wide">Students can be from different branches or years but must be from DSCE</span>
+                <span className="font-body tracking-wide">Students can be from different branches or years but must be from DSCE.</span>
               </li>
               <li className="flex items-start gap-3">
                 <div className="w-1.5 h-1.5 bg-subheading/60 rounded-full mt-2"></div>
-                <span className="font-body tracking-wide">Each team is allowed to register only once, multiple registrations are not allowed</span>
+                <span className="font-body tracking-wide">Each team is allowed to register only once, multiple registrations are not allowed.</span>
               </li>
               <li className="flex items-start gap-3">
                 <div className="w-1.5 h-1.5 bg-subheading/60 rounded-full mt-2"></div>
-                <span className="font-body tracking-wide">Only the team leader has to fill the form</span>
+                <span className="font-body tracking-wide">Only the team leader has to fill the form.</span>
               </li>
               <li className="flex items-start gap-3">
                 <div className="w-1.5 h-1.5 bg-subheading/60 rounded-full mt-2"></div>

@@ -36,7 +36,7 @@ export default function PPTGuidelines() {
           >
             <span className="text-heading">Important</span>
             <br className="hidden sm:block" />
-            <span className="text-subheading">Documents</span>
+            <span className="text-subheading ml-2 sm:ml-0">Documents</span>
           </motion.h2>
           <motion.p
             className="font-body text-base sm:text-lg text-gray-400 max-w-3xl mx-auto font-light leading-relaxed tracking-wide px-4"

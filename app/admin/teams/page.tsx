@@ -11,13 +11,13 @@ interface Team {
     email: string;
     phone: string;
   };
-  members: unknown[];
+  memberCount: number;
   problemStatement: {
     psNumber: string;
     title: string;
   };
   status: 'registered' | 'selected' | 'rejected' | 'finalist';
-  createdAt: string;
+  registrationDate: string;
 }
 
 export default function TeamsManagement() {
@@ -190,7 +190,7 @@ export default function TeamsManagement() {
                         <td className="px-6 py-4">
                           <div>
                             <p className="text-white font-medium">{team.teamName}</p>
-                            <p className="text-gray-400 text-sm">{team.members.length + 1} members</p>
+                            <p className="text-gray-400 text-sm">{team.memberCount + 1} members</p>
                           </div>
                         </td>
                         <td className="px-6 py-4">

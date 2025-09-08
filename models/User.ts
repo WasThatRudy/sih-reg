@@ -10,6 +10,12 @@ export interface IUser extends Document {
   firebaseUid?: string; // Optional for admin users
   passwordHash?: string; // Only for admin users
   team?: string; // Reference to Team document
+  // Leader-specific fields
+  phone?: string;
+  gender?: "male" | "female" | "other";
+  college?: string;
+  year?: string;
+  branch?: string;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -60,6 +66,32 @@ const userSchema = new Schema<IUser, IUserModel, IUserMethods>(
       type: Schema.Types.ObjectId,
       ref: "Team",
       default: null,
+    },
+    // Leader-specific fields
+    phone: {
+      type: String,
+      trim: true,
+      required: false, // Made optional for initial signup
+    },
+    gender: {
+      type: String,
+      enum: ["male", "female", "other"],
+      required: false, // Made optional for initial signup
+    },
+    college: {
+      type: String,
+      trim: true,
+      required: false, // Made optional for initial signup
+    },
+    year: {
+      type: String,
+      trim: true,
+      required: false, // Made optional for initial signup
+    },
+    branch: {
+      type: String,
+      trim: true,
+      required: false, // Made optional for initial signup
     },
   },
   {

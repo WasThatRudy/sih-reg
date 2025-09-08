@@ -61,9 +61,16 @@ export default function CustomDropdown({
         className="w-full px-4 py-3 bg-gray-800/50 border border-gray-700 rounded-lg text-left text-white focus:border-heading focus:outline-none transition-colors duration-300 font-body flex items-center justify-between"
         whileHover={{ borderColor: 'rgba(0, 113, 45, 0.3)' }}
       >
-        <span className={selectedOption ? 'text-white' : 'text-gray-400'}>
-          {selectedOption ? selectedOption.label : placeholder}
-        </span>
+        <div className="flex flex-col">
+          <span className={selectedOption ? 'text-white' : 'text-gray-400'}>
+            {selectedOption ? selectedOption.label : placeholder}
+          </span>
+          {selectedOption && selectedOption.description && (
+            <span className="text-xs text-gray-500 mt-1">
+              {selectedOption.description.split(' | ')[0]}
+            </span>
+          )}
+        </div>
         <motion.svg
           className="w-5 h-5 text-gray-400"
           fill="none"
@@ -106,7 +113,34 @@ export default function CustomDropdown({
                 </div>
                 {option.description && (
                   <div className="text-gray-400 text-xs leading-relaxed">
-                    {option.description}
+                    {option.description.split(' | ').map((part, index) => {
+                      const isSlotsInfo = part.startsWith('Available slots:');
+                      let slotsClassName = '';
+                      
+                      if (isSlotsInfo) {
+                        const slotsMatch = part.match(/(\d+)\/(\d+)/);
+                        if (slotsMatch) {
+                          const available = parseInt(slotsMatch[1]);
+                          const max = parseInt(slotsMatch[2]);
+                          if (available === 0) {
+                            slotsClassName = 'text-red-400 font-bold';
+                          } else if (available <= max * 0.2) {
+                            slotsClassName = 'text-yellow-400 font-semibold';
+                          } else {
+                            slotsClassName = 'text-green-400 font-medium';
+                          }
+                        }
+                      }
+                      
+                      return (
+                        <span key={index} className={isSlotsInfo ? slotsClassName : ''}>
+                          {part}
+                          {index < (option.description?.split(' | ').length || 0) - 1 && (
+                            <span className="text-gray-500 mx-1">•</span>
+                          )}
+                        </span>
+                      );
+                    })}
                   </div>
                 )}
               </motion.button>

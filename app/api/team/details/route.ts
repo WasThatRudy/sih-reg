@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     // Find team registered by this leader with full details
     const team = await Team.findOne({ leader: user._id })
       .populate("problemStatement", "title code description")
-      .populate("leader", "name email")
+      .populate("leader", "name email phone branch year gender college")
       .lean();
 
     if (!team) {

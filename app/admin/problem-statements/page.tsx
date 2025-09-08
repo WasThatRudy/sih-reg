@@ -276,27 +276,42 @@ export default function ProblemStatementsManagement() {
                 animate={{ opacity: 1, y: 0 }}
                 className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl p-6 hover:border-gray-700 transition-colors"
               >
-                <div className="flex items-start justify-between mb-4">
-                  <div className="flex items-center gap-3">
+                <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3 mb-4">
+                  <div className="flex items-center gap-3 flex-wrap flex-1 min-w-0">
                     <span className="bg-heading/10 text-heading px-3 py-1 rounded-full text-sm font-medium border border-heading/20">
-                      {ps.psNumber}
-                    </span>
-                    <span className="bg-subheading/10 text-subheading px-3 py-1 rounded-full text-xs font-medium border border-subheading/20">
                       {ps.domain}
                     </span>
+                    <div className="flex flex-wrap gap-1">
+                      {ps.psNumber.split('/').map((num, index) => (
+                        <span key={index} className="bg-subheading/10 text-subheading px-2 py-1 rounded-full text-xs font-medium border border-subheading/20">
+                          {num}
+                        </span>
+                      ))}
+                    </div>
+                    {ps.link && (
+                      <div className="flex flex-wrap gap-1">
+                        {ps.link.split('/').map((part, index) => (
+                          <span key={index} className="bg-blue-500/10 text-blue-400 px-2 py-1 rounded-full text-xs font-medium border border-blue-500/20">
+                            {part}
+                          </span>
+                        ))}
+                      </div>
+                    )}
                   </div>
-                  <button
-                    onClick={() => togglePSStatus(ps._id, ps.isActive)}
-                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      ps.isActive ? 'bg-green-600' : 'bg-gray-600'
-                    }`}
-                  >
-                    <span
-                      className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        ps.isActive ? 'translate-x-6' : 'translate-x-1'
+                  <div className="shrink-0 self-start sm:self-auto">
+                    <button
+                      onClick={() => togglePSStatus(ps._id, ps.isActive)}
+                      className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                        ps.isActive ? 'bg-green-600' : 'bg-gray-600'
                       }`}
-                    />
-                  </button>
+                    >
+                      <span
+                        className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                          ps.isActive ? 'translate-x-6' : 'translate-x-1'
+                        }`}
+                      />
+                    </button>
+                  </div>
                 </div>
 
                 <h3 className="font-display text-lg text-white mb-3 line-clamp-2">
@@ -347,3 +362,4 @@ export default function ProblemStatementsManagement() {
     </AdminLayout>
   );
 }
+

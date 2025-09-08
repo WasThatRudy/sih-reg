@@ -67,10 +67,14 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
     <AdminProtectedRoute>
       <div className="min-h-screen bg-background">
       {/* Mobile sidebar */}
-      <div className={`fixed inset-0 flex z-40 lg:hidden ${sidebarOpen ? '' : 'pointer-events-none'}`}>
-        <div className={`fixed inset-0 bg-black opacity-75 transition-opacity ${sidebarOpen ? 'opacity-75' : 'opacity-0'}`} onClick={() => setSidebarOpen(false)} />
-        
-        <div className={`relative flex-1 flex flex-col max-w-xs w-full bg-gray-900 transform transition-transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}`}>
+      {sidebarOpen && (
+      <div className="fixed inset-0 flex z-40 lg:hidden">
+        <button
+          className="fixed inset-0 bg-black/70 transition-opacity"
+          aria-label="Close sidebar overlay"
+          onClick={() => setSidebarOpen(false)}
+        />
+        <div className="relative flex-1 flex flex-col max-w-xs w-full bg-gray-900 transform transition-transform translate-x-0">
           <div className="absolute top-0 right-0 -mr-12 pt-2">
             <button
               className="ml-1 flex items-center justify-center h-10 w-10 rounded-full focus:outline-none focus:ring-2 focus:ring-inset focus:ring-white"
@@ -108,6 +112,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
           </div>
         </div>
       </div>
+      )}
 
       {/* Static sidebar for desktop */}
       <div className="hidden lg:flex lg:w-64 lg:flex-col lg:fixed lg:inset-y-0">

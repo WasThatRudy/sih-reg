@@ -1,7 +1,11 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "../../../../lib/middleware/adminAuth";
-import { Team, ITeam } from "../../../../models/Team";
 import dbConnect from "../../../../lib/mongodb";
+import { Team, ITeam } from "../../../../models/Team";
+
+// Import models to ensure they are registered with Mongoose
+import "../../../../models/User";
+import "../../../../models/ProblemStatement";
 
 export async function GET(request: NextRequest) {
   try {
@@ -30,7 +34,7 @@ export async function GET(request: NextRequest) {
 
     // Get teams with pagination
     const teams = await Team.find(query)
-      .populate("leader", "name email phone branch year gender college")
+      .populate("leader", "name email phone")
       .populate("problemStatement", "psNumber title domain")
       .sort({ registrationDate: -1 })
       .skip(skip)
@@ -51,6 +55,7 @@ export async function GET(request: NextRequest) {
         memberCount: team.members.length,
         taskCount: team.tasks.length,
       })),
+      total: totalTeams,
       pagination: {
         currentPage: page,
         totalPages: Math.ceil(totalTeams / limit),
@@ -94,7 +99,7 @@ export async function PUT(request: NextRequest) {
     }
 
     const team = await Team.findByIdAndUpdate(teamId, { status }, { new: true })
-      .populate("leader", "name email phone branch year gender college")
+      .populate("leader", "name email phone")
       .populate("problemStatement", "title");
 
     if (!team) {

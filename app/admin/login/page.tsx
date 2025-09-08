@@ -2,7 +2,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useRouter } from 'next/navigation';
-import Link from 'next/link';
 import Navbar from '@/components/Navbar';
 import ValidatedInput from '@/components/ui/ValidatedInput';
 import { useAdminAuth } from '@/lib/context/AdminAuthContext';
@@ -155,16 +154,10 @@ export default function AdminLogin() {
                 )}
               </motion.button>
 
-              {/* Sign Up Link */}
+              {/* Admin Info */}
               <div className="text-center">
                 <p className="text-gray-400 font-body">
-                  Need to create an admin account?{' '}
-                  <Link 
-                    href="/admin/signup" 
-                    className="text-subheading hover:text-subheading/80 transition-colors duration-300 font-medium"
-                  >
-                    Contact administrator
-                  </Link>
+                  Secure admin access with hardcoded credentials
                 </p>
               </div>
             </form>

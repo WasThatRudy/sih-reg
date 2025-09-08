@@ -13,11 +13,11 @@ export async function verifyAdminAuth(
   try {
     const authHeader = request.headers.get("authorization");
 
-    if (!authHeader || !authHeader.startsWith("Basic ")) {
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
       throw new Error("No admin credentials provided");
     }
 
-    // Extract Basic auth credentials
+    // Extract Bearer token (which is base64 encoded email:password)
     const base64Credentials = authHeader.split(" ")[1];
     const credentials = Buffer.from(base64Credentials, "base64").toString(
       "ascii"

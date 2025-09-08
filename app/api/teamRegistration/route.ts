@@ -8,6 +8,7 @@ import dbConnect from "../../../lib/mongodb";
 import {
   validateTeamRegistration,
   validateTeamMember,
+  validateCrossTeamDuplicates,
 } from "../../../lib/utils/validation";
 import { sendTeamRegistrationEmail } from "../../../lib/utils/email";
 import mongoose from "mongoose";
@@ -25,7 +26,8 @@ export async function POST(request: NextRequest) {
           return NextResponse.json(
             {
               success: false,
-              error: "Please logout as admin first to register as a team member",
+              error:
+                "Please logout as admin first to register as a team member",
               isAdmin: true,
               adminEmail: adminRequest.admin.email,
             },
@@ -176,6 +178,32 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // ✨ NEW: Check for cross-team duplicate emails and phone numbers
+    const crossTeamValidation = await validateCrossTeamDuplicates({
+      teamLeader: teamLeader
+        ? {
+            email: teamLeader.email,
+            phone: teamLeader.phone,
+          }
+        : undefined,
+      members: teamMembers.map((member) => ({
+        email: member.email,
+        phone: member.phone,
+      })),
+    });
+
+    if (!crossTeamValidation.isValid) {
+      return NextResponse.json(
+        {
+          success: false,
+          error: "Duplicate contact information found",
+          errors: crossTeamValidation.errors,
+          duplicateDetails: crossTeamValidation.duplicateDetails,
+        },
+        { status: 400 }
+      );
+    }
+
     // Check problem statement availability
     const ps = await ProblemStatement.findById(problemStatement);
     if (!ps) {
@@ -205,8 +233,12 @@ export async function POST(request: NextRequest) {
             user._id,
             {
               phone: teamLeader.phone,
-              gender: teamLeader.gender?.toLowerCase() as "male" | "female" | "other",
-              college: teamLeader.college || "Dayananda Sagar College of Engineering",
+              gender: teamLeader.gender?.toLowerCase() as
+                | "male"
+                | "female"
+                | "other",
+              college:
+                teamLeader.college || "Dayananda Sagar College of Engineering",
               year: teamLeader.year,
               branch: teamLeader.branch,
             },

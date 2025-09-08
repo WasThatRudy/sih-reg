@@ -10,7 +10,7 @@ import CustomDropdown from "@/components/ui/CustomDropdown";
 import AccordionSection from "@/components/ui/AccordionSection";
 import ValidatedInput from "@/components/ui/ValidatedInput";
 import { useAuth } from "@/lib/context/AuthContext";
-import { validateNoDuplicates } from "@/lib/utils/validation";
+import { validateNoDuplicates } from "@/lib/utils/client-validation";
 
 interface ProblemStatement {
   _id: string;
@@ -182,17 +182,19 @@ export default function Registration() {
       });
 
       if (response.ok) {
-        await response.json(); // Process response  
+        await response.json(); // Process response
         alert("Team registered successfully!");
         // Refresh team status and redirect to team info
         await refreshTeamStatus();
         window.location.href = "/team-info";
       } else {
         const error = await response.json();
-        
+
         // Check if user is logged in as admin
         if (error.isAdmin) {
-          alert(`Please logout as admin (${error.adminEmail}) first, then login as a regular user to register your team.`);
+          alert(
+            `Please logout as admin (${error.adminEmail}) first, then login as a regular user to register your team.`
+          );
         } else {
           alert(`Registration failed: ${error.error || error.message}`);
         }
@@ -212,7 +214,12 @@ export default function Registration() {
     index?: number
   ) => {
     // Prevent email changes when it's locked (from Firebase)
-    if (section === "teamLeader" && field === "email" && user && formData.teamLeader.email === user.email) {
+    if (
+      section === "teamLeader" &&
+      field === "email" &&
+      user &&
+      formData.teamLeader.email === user.email
+    ) {
       return; // Don't allow changes to locked email
     }
 

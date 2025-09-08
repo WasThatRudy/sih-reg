@@ -1,17 +1,17 @@
-'use client';
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { getValidationMessage } from '@/lib/utils/validation';
-import { EyeIcon, LockIcon } from 'lucide-react';
+"use client";
+import { useState, useEffect, useCallback } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { getValidationMessage } from "@/lib/utils/client-validation";
+import { EyeIcon, LockIcon } from "lucide-react";
 
 interface ValidatedInputProps {
   label: string;
-  type: 'text' | 'email' | 'tel' | 'password';
+  type: "text" | "email" | "tel" | "password";
   value: string;
   onChange: (value: string) => void;
   placeholder?: string;
   required?: boolean;
-  validationType?: 'email' | 'phone' | 'name' | 'team name' | 'branch';
+  validationType?: "email" | "phone" | "name" | "team name" | "branch";
   className?: string;
   error?: string;
   disabled?: boolean;
@@ -25,24 +25,27 @@ export default function ValidatedInput({
   placeholder,
   required = false,
   validationType,
-  className = '',
+  className = "",
   error,
-  disabled = false
+  disabled = false,
 }: ValidatedInputProps) {
   const [touched, setTouched] = useState(false);
-  const [validationError, setValidationError] = useState('');
+  const [validationError, setValidationError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const validateField = (val: string) => {
-    if (!validationType) return '';
-    return getValidationMessage(validationType, val);
-  };
+  const validateField = useCallback(
+    (val: string) => {
+      if (!validationType) return "";
+      return getValidationMessage(validationType, val);
+    },
+    [validationType]
+  );
 
   useEffect(() => {
     if (touched) {
       const newError = validateField(value);
       setValidationError(newError);
     }
-  }, [value, touched, validationType]);
+  }, [value, touched, validationType, validateField]);
 
   const handleBlur = () => {
     setTouched(true);
@@ -52,17 +55,17 @@ export default function ValidatedInput({
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     let newValue = e.target.value;
-    
+
     // Special formatting for phone numbers
-    if (validationType === 'phone') {
+    if (validationType === "phone") {
       // Remove non-digits
-      newValue = newValue.replace(/\D/g, '');
+      newValue = newValue.replace(/\D/g, "");
       // Limit to 10 digits
       if (newValue.length > 10) {
         newValue = newValue.slice(0, 10);
       }
     }
-    
+
     onChange(newValue);
   };
 
@@ -77,25 +80,29 @@ export default function ValidatedInput({
       </label>
       <div className="relative">
         <input
-          type={showPassword ? 'text' : type}
+          type={showPassword ? "text" : type}
           value={value}
           onChange={handleChange}
           onBlur={handleBlur}
           disabled={disabled}
           className={`w-full px-4 py-3 bg-gray-800/50 border rounded-lg text-white placeholder-gray-400 focus:outline-none transition-colors duration-300 font-body ${
             disabled
-              ? 'bg-gray-700/50 text-gray-400 cursor-not-allowed border-gray-600'
-              : hasError 
-                ? 'border-red-500 focus:border-red-400' 
-                : isValid 
-                  ? 'border-green-500 focus:border-green-400'
-                  : 'border-gray-700 focus:border-heading'
+              ? "bg-gray-700/50 text-gray-400 cursor-not-allowed border-gray-600"
+              : hasError
+              ? "border-red-500 focus:border-red-400"
+              : isValid
+              ? "border-green-500 focus:border-green-400"
+              : "border-gray-700 focus:border-heading"
           }`}
           placeholder={placeholder}
           required={required}
         />
-        {type === 'password' && (
-          <button type="button" className="absolute right-3 top-1/2 transform -translate-y-1/2" onClick={() => setShowPassword(!showPassword)}>
+        {type === "password" && (
+          <button
+            type="button"
+            className="absolute right-3 top-1/2 transform -translate-y-1/2"
+            onClick={() => setShowPassword(!showPassword)}
+          >
             <EyeIcon className="w-5 h-5 text-gray-400" />
           </button>
         )}
@@ -104,34 +111,44 @@ export default function ValidatedInput({
             <LockIcon className="w-5 h-5 text-gray-400" />
           </div>
         )}
-        
+
         {/* Validation icon */}
-        {type !== 'password' && !disabled && <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
-          {hasError && (
-            <motion.svg
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className="w-5 h-5 text-red-400"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
-            </motion.svg>
-          )}
-          {isValid && (
-            <motion.svg
-              initial={{ scale: 0 }}
-              animate={{ scale: 1 }}
-              className="w-5 h-5 text-green-400"
-              fill="currentColor"
-              viewBox="0 0 20 20"
-            >
-              <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clipRule="evenodd" />
-            </motion.svg>
-          )}
-        </div>}
+        {type !== "password" && !disabled && (
+          <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+            {hasError && (
+              <motion.svg
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="w-5 h-5 text-red-400"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z"
+                  clipRule="evenodd"
+                />
+              </motion.svg>
+            )}
+            {isValid && (
+              <motion.svg
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                className="w-5 h-5 text-green-400"
+                fill="currentColor"
+                viewBox="0 0 20 20"
+              >
+                <path
+                  fillRule="evenodd"
+                  d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z"
+                  clipRule="evenodd"
+                />
+              </motion.svg>
+            )}
+          </div>
+        )}
       </div>
-      
+
       {/* Error message */}
       <AnimatePresence>
         {hasError && (

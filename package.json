@@ -8,7 +8,10 @@
     "start": "next start",
     "lint": "eslint",
     "seed": "node scripts/seed-db.mjs",
-    "test-api": "node test-api.mjs"
+    "test-api": "node test-api.mjs",
+    "check-duplicates": "node scripts/check-duplicates.mjs",
+    "quick-duplicate-check": "node scripts/quick-duplicate-check.mjs",
+    "cross-team-duplicates": "node scripts/cross-team-duplicates.mjs"
   },
   "dependencies": {
     "@types/bcrypt": "^6.0.0",

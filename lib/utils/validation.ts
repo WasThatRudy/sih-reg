@@ -453,7 +453,6 @@ export const validateCrossTeamDuplicates = async (
   try {
     // Import here to avoid circular dependency issues
     const { Team } = await import("../../models/Team");
-    const { User } = await import("../../models/User");
 
     const errors: string[] = [];
     const emailConflicts: Array<{
@@ -503,30 +502,8 @@ export const validateCrossTeamDuplicates = async (
       }
     });
 
-    // Check for email conflicts in existing teams
+    // Check for email conflicts in existing teams (only check team members, not User collection)
     for (const { email, type } of emailsToCheck) {
-      // Check if email exists as team leader
-      const userWithEmail = await User.findOne({ email: email });
-      if (userWithEmail && userWithEmail.team) {
-        const conflictingTeam = await Team.findById(userWithEmail.team).select(
-          "teamName"
-        );
-        if (conflictingTeam) {
-          emailConflicts.push({
-            email: email,
-            conflictingTeams: [conflictingTeam.teamName],
-            memberType: type,
-          });
-          errors.push(
-            `${
-              type.charAt(0).toUpperCase() + type.slice(1)
-            } email "${email}" is already used as team leader in team "${
-              conflictingTeam.teamName
-            }"`
-          );
-        }
-      }
-
       // Check if email exists in team members
       const teamsWithMemberEmail = await Team.find({
         "members.email": { $regex: new RegExp(`^${email}$`, "i") },
@@ -557,33 +534,9 @@ export const validateCrossTeamDuplicates = async (
       }
     }
 
-    // Check for phone conflicts in existing teams
+    // Check for phone conflicts in existing teams (only check team members, not User collection)
     for (const { phone, type } of phonesToCheck) {
       if (phone.length < 10) continue; // Skip invalid phone numbers
-
-      // Check if phone exists as team leader
-      const userWithPhone = await User.findOne({
-        phone: { $regex: new RegExp(`${phone}$`) },
-      });
-      if (userWithPhone && userWithPhone.team) {
-        const conflictingTeam = await Team.findById(userWithPhone.team).select(
-          "teamName"
-        );
-        if (conflictingTeam) {
-          phoneConflicts.push({
-            phone: phone,
-            conflictingTeams: [conflictingTeam.teamName],
-            memberType: type,
-          });
-          errors.push(
-            `${
-              type.charAt(0).toUpperCase() + type.slice(1)
-            } phone "${phone}" is already used as team leader in team "${
-              conflictingTeam.teamName
-            }"`
-          );
-        }
-      }
 
       // Check if phone exists in team members
       const teamsWithMemberPhone = await Team.find({

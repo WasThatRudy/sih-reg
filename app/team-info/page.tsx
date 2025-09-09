@@ -3,6 +3,7 @@ import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import WithdrawButton from "@/components/WithdrawButton";
 import { useAuth } from "@/lib/context/AuthContext";
 import { ExternalLink, FileText, Download, MessageCircle, Calendar, MapPin } from "lucide-react";
 
@@ -140,7 +141,7 @@ export default function TeamInfo() {
                   </svg>
                 </div>
                 <h2 className="text-3xl font-display text-green-400 mb-4">
-                  You're All Set! 🎉
+                  You&apos;re All Set! 🎉
                 </h2>
                 <p className="text-green-200 font-body text-lg mb-6">
                   Your team has been successfully registered for the Smart India Hackathon 2025 Internal Round.
@@ -540,13 +541,22 @@ export default function TeamInfo() {
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.4 }}
+              transition={{ delay: 0.7 }}
               className="text-center"
             >
-              <p className="text-text font-body mb-4">
+              <p className="text-text font-body mb-6">
                 For any changes or queries, please contact the administrators.
               </p>
             </motion.div>
+
+            {/* Withdraw Button */}
+            <WithdrawButton 
+              teamName={team.teamName}
+              onWithdrawSuccess={() => {
+                // This will be called after successful withdrawal
+                // The component handles redirection internally
+              }}
+            />
           </motion.div>
         </div>
       </div>

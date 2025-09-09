@@ -6,7 +6,7 @@ import { User } from "../../../../models/User";
 import { ProblemStatement } from "../../../../models/ProblemStatement";
 import { DeletedTeam } from "../../../../models/DeletedTeam";
 import { auth as firebaseAdmin } from "../../../../lib/firebase-admin";
-import { sendEmail } from "../../../../lib/utils/email";
+// import { sendEmail } from "../../../../lib/utils/email";
 import mongoose from "mongoose";
 
 // Import models to ensure they are registered with Mongoose
@@ -257,7 +257,8 @@ export async function DELETE(request: NextRequest) {
     // Step 5: Delete Team document
     await Team.findByIdAndDelete(teamId).session(session);
 
-    // Step 6: Send email notification to leader
+    // Step 6: Send email notification to leader (commented out for now)
+    /*
     if (leader.email) {
       try {
         const emailSubject = "Team Registration Removed - Action Required";
@@ -305,6 +306,7 @@ export async function DELETE(request: NextRequest) {
         // Don't abort transaction for email failure, just log it
       }
     }
+    */
 
     // Commit the transaction
     await session.commitTransaction();

@@ -6,9 +6,10 @@ export interface ITaskField {
   label: string;
   required: boolean;
   placeholder?: string;
-  acceptedFormats?: string[]; // For file uploads
-  maxSize?: number; // For file uploads (in MB)
+  acceptedFormats?: string[]; // For file uploads - e.g., ["pdf", "doc", "docx"]
+  maxSize?: number; // For file uploads (in MB) - e.g., 0.5 for 500KB
   maxLength?: number; // For text fields
+  description?: string; // Field description/instructions
 }
 
 // Task Interface
@@ -54,12 +55,16 @@ const taskFieldSchema = new Schema<ITaskField>(
     ],
     maxSize: {
       type: Number,
-      min: 1,
+      min: 0.001, // Minimum 1KB
       max: 100, // Max 100MB
     },
     maxLength: {
       type: Number,
       min: 1,
+    },
+    description: {
+      type: String,
+      trim: true,
     },
   },
   {

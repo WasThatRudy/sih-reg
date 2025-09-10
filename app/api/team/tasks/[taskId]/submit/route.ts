@@ -91,7 +91,7 @@ export async function POST(
       }
 
       if (field.type === "file" && fieldValue instanceof File) {
-        // Validate file
+        // Validate file using field-specific restrictions
         const validation = validateFile(
           {
             size: fieldValue.size,
@@ -100,19 +100,19 @@ export async function POST(
           },
           {
             maxSizeInMB: field.maxSize || 10,
-            allowedFormats: field.acceptedFormats || [
-              "pdf",
-              "ppt",
-              "pptx",
-              "doc",
-              "docx",
-            ],
+            allowedFormats:
+              field.acceptedFormats && field.acceptedFormats.length > 0
+                ? field.acceptedFormats
+                : ["pdf", "ppt", "pptx", "doc", "docx"], // Default formats
           }
         );
 
         if (!validation.isValid) {
           return NextResponse.json(
-            { success: false, error: validation.error },
+            {
+              success: false,
+              error: `File '${field.label}': ${validation.error}`,
+            },
             { status: 400 }
           );
         }
@@ -137,7 +137,25 @@ export async function POST(
         }
       } else if (fieldValue) {
         // Handle other field types
-        submissionData[field.label] = fieldValue.toString();
+        const fieldValueString = fieldValue.toString();
+
+        // Validate text length for text and textarea fields
+        if (
+          (field.type === "text" || field.type === "textarea") &&
+          field.maxLength
+        ) {
+          if (fieldValueString.length > field.maxLength) {
+            return NextResponse.json(
+              {
+                success: false,
+                error: `Field '${field.label}' exceeds maximum length of ${field.maxLength} characters`,
+              },
+              { status: 400 }
+            );
+          }
+        }
+
+        submissionData[field.label] = fieldValueString;
       }
     }
 

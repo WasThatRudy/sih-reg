@@ -1,7 +1,7 @@
-'use client';
-import { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import AdminLayout from '@/components/admin/AdminLayout';
+"use client";
+import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import AdminLayout from "@/components/admin/AdminLayout";
 
 interface Task {
   _id: string;
@@ -17,9 +17,13 @@ interface Task {
 
 interface TaskField {
   name: string;
-  type: 'text' | 'file' | 'url' | 'number' | 'date';
+  type: "text" | "textarea" | "file" | "url" | "number" | "date";
   required: boolean;
   description?: string;
+  acceptedFormats?: string[];
+  maxSize?: number;
+  maxLength?: number;
+  placeholder?: string;
 }
 
 interface Team {
@@ -32,151 +36,257 @@ interface Team {
 export default function TasksManagement() {
   // Remove unused admin variable
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [teams, setTeams] = useState<Team[]>([]);
+  const [allTeams, setAllTeams] = useState<Team[]>([]);
+  const [filteredTeams, setFilteredTeams] = useState<Team[]>([]);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [teamsByStatus, setTeamsByStatus] = useState<Record<string, Team[]>>(
+    {}
+  );
+  const [statusCounts, setStatusCounts] = useState<Record<string, number>>({});
+  const [selectedTeamIds, setSelectedTeamIds] = useState<Set<string>>(
+    new Set()
+  );
+  const [teamSearchQuery, setTeamSearchQuery] = useState("");
+  const [teamStatusFilter, setTeamStatusFilter] = useState("all");
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
 
   const [newTask, setNewTask] = useState({
-    title: '',
-    description: '',
+    title: "",
+    description: "",
     fields: [] as TaskField[],
     assignedTo: [] as string[],
-    dueDate: '',
+    dueDate: "",
   });
 
   useEffect(() => {
     fetchTasks();
-    fetchTeams();
+    fetchTeamsForSelection();
   }, []);
 
+  // Filter teams based on search query and status
+  useEffect(() => {
+    let filtered = allTeams;
+
+    // Filter by status
+    if (teamStatusFilter !== "all") {
+      filtered = filtered.filter((team) => team.status === teamStatusFilter);
+    }
+
+    // Filter by search query
+    if (teamSearchQuery.trim()) {
+      const query = teamSearchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (team) =>
+          team.teamName.toLowerCase().includes(query) ||
+          team.leader.name.toLowerCase().includes(query) ||
+          team.leader.email.toLowerCase().includes(query)
+      );
+    }
+
+    setFilteredTeams(filtered);
+  }, [allTeams, teamSearchQuery, teamStatusFilter]);
+
+  // Update assignedTo array when selectedTeamIds changes
+  useEffect(() => {
+    setNewTask((prev) => ({
+      ...prev,
+      assignedTo: Array.from(selectedTeamIds),
+    }));
+  }, [selectedTeamIds]);
+
   const fetchTasks = async () => {
-    const token = localStorage.getItem('adminToken');
+    const token = localStorage.getItem("adminToken");
     if (!token) {
       setLoading(false);
       return;
     }
-    
+
     try {
-      const response = await fetch('/api/admin/tasks', {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const response = await fetch("/api/admin/tasks", {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (response.ok) {
         const data = await response.json();
         setTasks(data.tasks || []);
       } else {
-        console.error('Failed to fetch tasks:', response.status);
+        console.error("Failed to fetch tasks:", response.status);
       }
     } catch (error) {
-      console.error('Error fetching tasks:', error);
+      console.error("Error fetching tasks:", error);
     } finally {
       setLoading(false);
     }
   };
 
-  const fetchTeams = async () => {
-    const token = localStorage.getItem('adminToken');
+  const fetchTeamsForSelection = async () => {
+    const token = localStorage.getItem("adminToken");
     if (!token) return;
-    
+
     try {
-      const response = await fetch('/api/admin/teams', {
-        headers: { 'Authorization': `Bearer ${token}` }
+      const response = await fetch("/api/admin/teams/selection", {
+        headers: { Authorization: `Bearer ${token}` },
       });
 
       if (response.ok) {
         const data = await response.json();
-        setTeams(data.teams || []);
+        setAllTeams(data.teams || []);
+        setTeamsByStatus(data.teamsByStatus || {});
+        setStatusCounts(data.statusCounts || {});
       } else {
-        console.error('Failed to fetch teams:', response.status);
+        console.error("Failed to fetch teams:", response.status);
       }
     } catch (error) {
-      console.error('Error fetching teams:', error);
+      console.error("Error fetching teams:", error);
     }
   };
 
+  // Bulk selection functions
+  const selectAllTeams = () => {
+    const allTeamIds = new Set(filteredTeams.map((team) => team._id));
+    setSelectedTeamIds(allTeamIds);
+  };
+
+  const selectNoneTeams = () => {
+    setSelectedTeamIds(new Set());
+  };
+
+  const selectTeamsByStatus = (status: string) => {
+    const teamsWithStatus = allTeams.filter((team) => team.status === status);
+    const teamIds = new Set(teamsWithStatus.map((team) => team._id));
+    setSelectedTeamIds(teamIds);
+  };
+
+  const toggleTeamSelection = (teamId: string) => {
+    const newSelection = new Set(selectedTeamIds);
+    if (newSelection.has(teamId)) {
+      newSelection.delete(teamId);
+    } else {
+      newSelection.add(teamId);
+    }
+    setSelectedTeamIds(newSelection);
+  };
+
+  const handleTeamSearch = (query: string) => {
+    setTeamSearchQuery(query);
+  };
+
+  const handleStatusFilter = (status: string) => {
+    setTeamStatusFilter(status);
+  };
+
+  const resetTaskForm = () => {
+    setNewTask({
+      title: "",
+      description: "",
+      fields: [],
+      assignedTo: [],
+      dueDate: "",
+    });
+    setSelectedTeamIds(new Set());
+    setTeamSearchQuery("");
+    setTeamStatusFilter("all");
+  };
+
   const addField = () => {
-    setNewTask(prev => ({
+    setNewTask((prev) => ({
       ...prev,
-      fields: [...prev.fields, { name: '', type: 'text', required: false }]
+      fields: [
+        ...prev.fields,
+        {
+          name: "",
+          type: "text",
+          required: false,
+          description: "",
+          acceptedFormats: [],
+          maxSize: 10,
+          maxLength: 500,
+          placeholder: "",
+        },
+      ],
     }));
   };
 
   const updateField = (index: number, field: Partial<TaskField>) => {
-    setNewTask(prev => ({
+    setNewTask((prev) => ({
       ...prev,
-      fields: prev.fields.map((f, i) => i === index ? { ...f, ...field } : f)
+      fields: prev.fields.map((f, i) => (i === index ? { ...f, ...field } : f)),
     }));
   };
 
   const removeField = (index: number) => {
-    setNewTask(prev => ({
+    setNewTask((prev) => ({
       ...prev,
-      fields: prev.fields.filter((_, i) => i !== index)
+      fields: prev.fields.filter((_, i) => i !== index),
     }));
   };
 
   const createTask = async () => {
-    const token = localStorage.getItem('adminToken');
+    const token = localStorage.getItem("adminToken");
     if (!token || !newTask.title.trim()) return;
-    
+
     setSubmitting(true);
     try {
-      const response = await fetch('/api/admin/tasks', {
-        method: 'POST',
+      const response = await fetch("/api/admin/tasks", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(newTask)
+        body: JSON.stringify(newTask),
       });
 
       if (response.ok) {
         await fetchTasks(); // Refresh tasks
         setShowCreateForm(false);
         setNewTask({
-          title: '',
-          description: '',
+          title: "",
+          description: "",
           fields: [],
           assignedTo: [],
-          dueDate: '',
+          dueDate: "",
         });
-        alert('Task created and assigned successfully!');
+        setSelectedTeamIds(new Set()); // Clear team selection
+        alert("Task created and assigned successfully!");
       } else {
         const error = await response.json();
         alert(`Failed to create task: ${error.message}`);
       }
     } catch (error) {
-      console.error('Error creating task:', error);
-      alert('An error occurred while creating the task');
+      console.error("Error creating task:", error);
+      alert("An error occurred while creating the task");
     } finally {
       setSubmitting(false);
     }
   };
 
   const toggleTaskStatus = async (taskId: string, currentStatus: boolean) => {
-    const token = localStorage.getItem('adminToken');
+    const token = localStorage.getItem("adminToken");
     if (!token) return;
-    
+
     try {
-      const response = await fetch('/api/admin/tasks', {
-        method: 'PUT',
+      const response = await fetch("/api/admin/tasks", {
+        method: "PUT",
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({ taskId, isActive: !currentStatus })
+        body: JSON.stringify({ taskId, isActive: !currentStatus }),
       });
 
       if (response.ok) {
-        setTasks(tasks.map(task => 
-          task._id === taskId ? { ...task, isActive: !currentStatus } : task
-        ));
+        setTasks(
+          tasks.map((task) =>
+            task._id === taskId ? { ...task, isActive: !currentStatus } : task
+          )
+        );
       } else {
-        console.error('Failed to update task status:', response.status);
+        console.error("Failed to update task status:", response.status);
       }
     } catch (error) {
-      console.error('Error updating task status:', error);
+      console.error("Error updating task status:", error);
     }
   };
 
@@ -186,8 +296,12 @@ export default function TasksManagement() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-display text-heading mb-2">Task Management</h1>
-            <p className="text-subheading font-body">Create and assign tasks to teams</p>
+            <h1 className="text-3xl font-display text-heading mb-2">
+              Task Management
+            </h1>
+            <p className="text-subheading font-body">
+              Create and assign tasks to teams
+            </p>
           </div>
           <button
             onClick={() => setShowCreateForm(true)}
@@ -206,11 +320,23 @@ export default function TasksManagement() {
             </div>
           ) : tasks.length === 0 ? (
             <div className="text-center py-12">
-              <svg className="w-16 h-16 text-gray-600 mx-auto mb-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4" />
+              <svg
+                className="w-16 h-16 text-gray-600 mx-auto mb-4"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"
+                />
               </svg>
               <p className="text-gray-400 text-lg">No tasks created yet</p>
-              <p className="text-gray-500 text-sm mt-2">Create your first task to get started</p>
+              <p className="text-gray-500 text-sm mt-2">
+                Create your first task to get started
+              </p>
             </div>
           ) : (
             tasks.map((task) => (
@@ -222,25 +348,33 @@ export default function TasksManagement() {
               >
                 <div className="flex items-start justify-between mb-4">
                   <div>
-                    <h3 className="text-xl font-display text-heading mb-2">{task.title}</h3>
-                    <p className="text-gray-400 text-sm mb-3">{task.description}</p>
+                    <h3 className="text-xl font-display text-heading mb-2">
+                      {task.title}
+                    </h3>
+                    <p className="text-gray-400 text-sm mb-3">
+                      {task.description}
+                    </p>
                     <div className="flex items-center gap-4 text-sm text-gray-500">
                       <span>Assigned to {task.assignedTo.length} teams</span>
                       {task.dueDate && (
-                        <span>Due: {new Date(task.dueDate).toLocaleDateString()}</span>
+                        <span>
+                          Due: {new Date(task.dueDate).toLocaleDateString()}
+                        </span>
                       )}
-                      <span>Created: {new Date(task.createdAt).toLocaleDateString()}</span>
+                      <span>
+                        Created: {new Date(task.createdAt).toLocaleDateString()}
+                      </span>
                     </div>
                   </div>
                   <button
                     onClick={() => toggleTaskStatus(task._id, task.isActive)}
                     className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                      task.isActive ? 'bg-green-600' : 'bg-gray-600'
+                      task.isActive ? "bg-green-600" : "bg-gray-600"
                     }`}
                   >
                     <span
                       className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
-                        task.isActive ? 'translate-x-6' : 'translate-x-1'
+                        task.isActive ? "translate-x-6" : "translate-x-1"
                       }`}
                     />
                   </button>
@@ -249,26 +383,96 @@ export default function TasksManagement() {
                 {/* Task Fields */}
                 {task.fields.length > 0 && (
                   <div className="border-t border-gray-700 pt-4">
-                    <h4 className="text-sm font-medium text-subheading mb-3">Task Fields:</h4>
+                    <h4 className="text-sm font-medium text-subheading mb-3">
+                      Task Fields:
+                    </h4>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
                       {task.fields.map((field, index) => (
-                        <div key={index} className="bg-gray-800/50 rounded-lg p-3">
+                        <div
+                          key={index}
+                          className="bg-gray-800/50 rounded-lg p-3"
+                        >
                           <div className="flex items-center gap-2 mb-1">
-                            <span className="text-white text-sm font-medium">{field.name}</span>
-                            <span className={`text-xs px-2 py-1 rounded ${
-                              field.type === 'file' ? 'bg-blue-500/20 text-blue-400' :
-                              field.type === 'url' ? 'bg-green-500/20 text-green-400' :
-                              field.type === 'date' ? 'bg-purple-500/20 text-purple-400' :
-                              'bg-gray-500/20 text-gray-400'
-                            }`}>
+                            <span className="text-white text-sm font-medium">
+                              {field.name}
+                            </span>
+                            <span
+                              className={`text-xs px-2 py-1 rounded ${
+                                field.type === "file"
+                                  ? "bg-blue-500/20 text-blue-400"
+                                  : field.type === "url"
+                                  ? "bg-green-500/20 text-green-400"
+                                  : field.type === "date"
+                                  ? "bg-purple-500/20 text-purple-400"
+                                  : field.type === "textarea"
+                                  ? "bg-orange-500/20 text-orange-400"
+                                  : "bg-gray-500/20 text-gray-400"
+                              }`}
+                            >
                               {field.type}
                             </span>
                             {field.required && (
-                              <span className="text-xs text-red-400">Required</span>
+                              <span className="text-xs text-red-400">
+                                Required
+                              </span>
                             )}
                           </div>
                           {field.description && (
-                            <p className="text-xs text-gray-400">{field.description}</p>
+                            <p className="text-xs text-gray-400 mb-2">
+                              {field.description}
+                            </p>
+                          )}
+
+                          {/* File Upload Restrictions Display */}
+                          {field.type === "file" && (
+                            <div className="text-xs text-gray-400 space-y-1">
+                              {field.maxSize && (
+                                <div className="flex items-center gap-1">
+                                  <span className="text-blue-400">Size:</span>
+                                  <span>
+                                    {field.maxSize < 1
+                                      ? `${Math.round(
+                                          field.maxSize * 1024
+                                        )} KB max`
+                                      : `${field.maxSize} MB max`}
+                                  </span>
+                                </div>
+                              )}
+                              {field.acceptedFormats &&
+                                field.acceptedFormats.length > 0 && (
+                                  <div className="flex items-center gap-1">
+                                    <span className="text-blue-400">
+                                      Formats:
+                                    </span>
+                                    <span>
+                                      .{field.acceptedFormats.join(", .")}
+                                    </span>
+                                  </div>
+                                )}
+                            </div>
+                          )}
+
+                          {/* Text Field Restrictions Display */}
+                          {(field.type === "text" ||
+                            field.type === "textarea") && (
+                            <div className="text-xs text-gray-400 space-y-1">
+                              {field.maxLength && (
+                                <div className="flex items-center gap-1">
+                                  <span className="text-gray-400">
+                                    Max length:
+                                  </span>
+                                  <span>{field.maxLength} characters</span>
+                                </div>
+                              )}
+                              {field.placeholder && (
+                                <div className="flex items-center gap-1">
+                                  <span className="text-gray-400">
+                                    Placeholder:
+                                  </span>
+                                  <span>&ldquo;{field.placeholder}&rdquo;</span>
+                                </div>
+                              )}
+                            </div>
                           )}
                         </div>
                       ))}
@@ -288,7 +492,10 @@ export default function TasksManagement() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4"
-              onClick={() => setShowCreateForm(false)}
+              onClick={() => {
+                setShowCreateForm(false);
+                resetTaskForm();
+              }}
             >
               <motion.div
                 initial={{ scale: 0.95, opacity: 0 }}
@@ -298,13 +505,28 @@ export default function TasksManagement() {
                 onClick={(e) => e.stopPropagation()}
               >
                 <div className="flex items-center justify-between mb-6">
-                  <h2 className="text-2xl font-display text-heading">Create New Task</h2>
+                  <h2 className="text-2xl font-display text-heading">
+                    Create New Task
+                  </h2>
                   <button
-                    onClick={() => setShowCreateForm(false)}
+                    onClick={() => {
+                      setShowCreateForm(false);
+                      resetTaskForm();
+                    }}
                     className="text-gray-400 hover:text-white"
                   >
-                    <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    <svg
+                      className="w-6 h-6"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M6 18L18 6M6 6l12 12"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -313,31 +535,52 @@ export default function TasksManagement() {
                   {/* Basic Info */}
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div>
-                      <label className="block text-subheading text-sm font-medium mb-2">Task Title *</label>
+                      <label className="block text-subheading text-sm font-medium mb-2">
+                        Task Title *
+                      </label>
                       <input
                         type="text"
                         value={newTask.title}
-                        onChange={(e) => setNewTask(prev => ({ ...prev, title: e.target.value }))}
+                        onChange={(e) =>
+                          setNewTask((prev) => ({
+                            ...prev,
+                            title: e.target.value,
+                          }))
+                        }
                         className="w-full px-4 py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-heading"
                         placeholder="Enter task title"
                       />
                     </div>
                     <div>
-                      <label className="block text-subheading text-sm font-medium mb-2">Due Date</label>
+                      <label className="block text-subheading text-sm font-medium mb-2">
+                        Due Date
+                      </label>
                       <input
                         type="date"
                         value={newTask.dueDate}
-                        onChange={(e) => setNewTask(prev => ({ ...prev, dueDate: e.target.value }))}
+                        onChange={(e) =>
+                          setNewTask((prev) => ({
+                            ...prev,
+                            dueDate: e.target.value,
+                          }))
+                        }
                         className="w-full px-4 py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-heading"
                       />
                     </div>
                   </div>
 
                   <div>
-                    <label className="block text-subheading text-sm font-medium mb-2">Description</label>
+                    <label className="block text-subheading text-sm font-medium mb-2">
+                      Description
+                    </label>
                     <textarea
                       value={newTask.description}
-                      onChange={(e) => setNewTask(prev => ({ ...prev, description: e.target.value }))}
+                      onChange={(e) =>
+                        setNewTask((prev) => ({
+                          ...prev,
+                          description: e.target.value,
+                        }))
+                      }
                       rows={3}
                       className="w-full px-4 py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-heading"
                       placeholder="Describe the task requirements"
@@ -346,35 +589,158 @@ export default function TasksManagement() {
 
                   {/* Assign to Teams */}
                   <div>
-                    <label className="block text-subheading text-sm font-medium mb-2">Assign to Teams</label>
-                    <div className="bg-gray-800/50 border border-gray-600 rounded-lg p-4 max-h-40 overflow-y-auto">
-                      <div className="space-y-2">
-                        {teams.map((team) => (
-                          <label key={team._id} className="flex items-center gap-3">
-                            <input
-                              type="checkbox"
-                              checked={newTask.assignedTo.includes(team._id)}
-                              onChange={(e) => {
-                                if (e.target.checked) {
-                                  setNewTask(prev => ({ ...prev, assignedTo: [...prev.assignedTo, team._id] }));
-                                } else {
-                                  setNewTask(prev => ({ ...prev, assignedTo: prev.assignedTo.filter(id => id !== team._id) }));
-                                }
-                              }}
-                              className="w-4 h-4 text-heading focus:ring-heading border-gray-600 rounded"
-                            />
-                            <span className="text-white text-sm">{team.teamName}</span>
-                            <span className="text-gray-400 text-xs">({team.leader.name})</span>
-                          </label>
-                        ))}
+                    <label className="block text-subheading text-sm font-medium mb-3">
+                      Assign to Teams
+                    </label>
+
+                    {/* Search and Filter Controls */}
+                    <div className="mb-4 space-y-3">
+                      {/* Search Bar */}
+                      <input
+                        type="text"
+                        placeholder="Search teams by name, leader, or email..."
+                        value={teamSearchQuery}
+                        onChange={(e) => handleTeamSearch(e.target.value)}
+                        className="w-full px-3 py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-heading"
+                      />
+
+                      {/* Filter and Bulk Selection Row */}
+                      <div className="flex flex-wrap items-center gap-3">
+                        {/* Status Filter */}
+                        <select
+                          value={teamStatusFilter}
+                          onChange={(e) => handleStatusFilter(e.target.value)}
+                          className="px-3 py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-heading"
+                        >
+                          <option value="all">
+                            All Status ({allTeams.length})
+                          </option>
+                          {Object.entries(statusCounts).map(
+                            ([status, count]) => (
+                              <option key={status} value={status}>
+                                {status.charAt(0).toUpperCase() +
+                                  status.slice(1)}{" "}
+                                ({count})
+                              </option>
+                            )
+                          )}
+                        </select>
+
+                        {/* Bulk Selection Buttons */}
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={selectAllTeams}
+                            className="px-3 py-1 bg-heading/20 text-heading border border-heading/30 rounded text-sm hover:bg-heading/30 transition-colors"
+                          >
+                            Select All ({filteredTeams.length})
+                          </button>
+                          <button
+                            type="button"
+                            onClick={selectNoneTeams}
+                            className="px-3 py-1 bg-gray-700 text-gray-300 border border-gray-600 rounded text-sm hover:bg-gray-600 transition-colors"
+                          >
+                            Select None
+                          </button>
+                        </div>
+
+                        {/* Quick Status Selection */}
+                        <div className="flex items-center gap-2">
+                          <span className="text-gray-400 text-sm">
+                            Quick select:
+                          </span>
+                          {Object.entries(statusCounts).map(
+                            ([status, count]) => (
+                              <button
+                                key={status}
+                                type="button"
+                                onClick={() => selectTeamsByStatus(status)}
+                                className={`px-2 py-1 rounded text-xs transition-colors ${
+                                  status === "selected"
+                                    ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                                    : status === "registered"
+                                    ? "bg-blue-500/20 text-blue-400 border border-blue-500/30"
+                                    : status === "finalist"
+                                    ? "bg-purple-500/20 text-purple-400 border border-purple-500/30"
+                                    : "bg-gray-500/20 text-gray-400 border border-gray-500/30"
+                                } hover:opacity-80`}
+                              >
+                                {status} ({count})
+                              </button>
+                            )
+                          )}
+                        </div>
                       </div>
+
+                      {/* Selection Summary */}
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-400">
+                          Showing {filteredTeams.length} of {allTeams.length}{" "}
+                          teams
+                        </span>
+                        <span className="text-heading font-medium">
+                          Selected: {selectedTeamIds.size} teams
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Team List */}
+                    <div className="bg-gray-800/50 border border-gray-600 rounded-lg max-h-60 overflow-y-auto">
+                      {filteredTeams.length === 0 ? (
+                        <div className="p-4 text-center text-gray-400">
+                          {teamSearchQuery || teamStatusFilter !== "all"
+                            ? "No teams match the current filters"
+                            : "No teams available"}
+                        </div>
+                      ) : (
+                        <div className="p-3 space-y-2">
+                          {filteredTeams.map((team) => (
+                            <label
+                              key={team._id}
+                              className="flex items-center gap-3 p-2 rounded hover:bg-gray-700/50 transition-colors cursor-pointer"
+                            >
+                              <input
+                                type="checkbox"
+                                checked={selectedTeamIds.has(team._id)}
+                                onChange={() => toggleTeamSelection(team._id)}
+                                className="w-4 h-4 text-heading focus:ring-heading border-gray-600 rounded"
+                              />
+                              <div className="flex-1 min-w-0">
+                                <div className="flex items-center gap-2">
+                                  <span className="text-white text-sm font-medium truncate">
+                                    {team.teamName}
+                                  </span>
+                                  <span
+                                    className={`text-xs px-2 py-1 rounded ${
+                                      team.status === "selected"
+                                        ? "bg-green-500/20 text-green-400"
+                                        : team.status === "registered"
+                                        ? "bg-blue-500/20 text-blue-400"
+                                        : team.status === "finalist"
+                                        ? "bg-purple-500/20 text-purple-400"
+                                        : "bg-gray-500/20 text-gray-400"
+                                    }`}
+                                  >
+                                    {team.status}
+                                  </span>
+                                </div>
+                                <div className="text-gray-400 text-xs truncate">
+                                  {team.leader.name} • {team.leader.email}
+                                </div>
+                              </div>
+                            </label>
+                          ))}
+                        </div>
+                      )}
                     </div>
                   </div>
 
                   {/* Task Fields */}
                   <div>
                     <div className="flex items-center justify-between mb-4">
-                      <label className="block text-subheading text-sm font-medium">Task Fields</label>
+                      <label className="block text-subheading text-sm font-medium">
+                        Task Fields
+                      </label>
                       <button
                         onClick={addField}
                         className="text-sm px-3 py-1 bg-heading/20 text-heading border border-heading/30 rounded hover:bg-heading/30"
@@ -382,24 +748,34 @@ export default function TasksManagement() {
                         Add Field
                       </button>
                     </div>
-                    
+
                     <div className="space-y-4">
                       {newTask.fields.map((field, index) => (
-                        <div key={index} className="bg-gray-800/50 border border-gray-600 rounded-lg p-4">
+                        <div
+                          key={index}
+                          className="bg-gray-800/50 border border-gray-600 rounded-lg p-4"
+                        >
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
                             <input
                               type="text"
                               value={field.name}
-                              onChange={(e) => updateField(index, { name: e.target.value })}
+                              onChange={(e) =>
+                                updateField(index, { name: e.target.value })
+                              }
                               placeholder="Field name"
                               className="px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-heading"
                             />
                             <select
                               value={field.type}
-                              onChange={(e) => updateField(index, { type: e.target.value as TaskField['type'] })}
+                              onChange={(e) =>
+                                updateField(index, {
+                                  type: e.target.value as TaskField["type"],
+                                })
+                              }
                               className="px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-heading"
                             >
                               <option value="text">Text</option>
+                              <option value="textarea">Textarea</option>
                               <option value="file">File Upload</option>
                               <option value="url">URL</option>
                               <option value="number">Number</option>
@@ -410,28 +786,316 @@ export default function TasksManagement() {
                                 <input
                                   type="checkbox"
                                   checked={field.required}
-                                  onChange={(e) => updateField(index, { required: e.target.checked })}
+                                  onChange={(e) =>
+                                    updateField(index, {
+                                      required: e.target.checked,
+                                    })
+                                  }
                                   className="w-4 h-4 text-heading focus:ring-heading border-gray-600 rounded"
                                 />
-                                <span className="text-white text-sm">Required</span>
+                                <span className="text-white text-sm">
+                                  Required
+                                </span>
                               </label>
                               <button
                                 onClick={() => removeField(index)}
                                 className="text-red-400 hover:text-red-300 ml-auto"
                               >
-                                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                <svg
+                                  className="w-4 h-4"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                    d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                  />
                                 </svg>
                               </button>
                             </div>
                           </div>
-                          <input
-                            type="text"
-                            value={field.description || ''}
-                            onChange={(e) => updateField(index, { description: e.target.value })}
-                            placeholder="Field description (optional)"
-                            className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-heading"
-                          />
+
+                          {/* Field Description */}
+                          <div className="mb-3">
+                            <input
+                              type="text"
+                              value={field.description || ""}
+                              onChange={(e) =>
+                                updateField(index, {
+                                  description: e.target.value,
+                                })
+                              }
+                              placeholder="Field description (optional)"
+                              className="w-full px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-heading"
+                            />
+                          </div>
+
+                          {/* File Upload Specific Controls */}
+                          {field.type === "file" && (
+                            <div className="space-y-3 border-t border-gray-700 pt-3">
+                              <h5 className="text-sm font-medium text-white">
+                                File Upload Settings
+                              </h5>
+
+                              {/* File Size Limit */}
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-gray-300 text-xs mb-1">
+                                    Max File Size
+                                  </label>
+                                  <div className="flex items-center gap-2">
+                                    <input
+                                      type="number"
+                                      value={field.maxSize || 10}
+                                      onChange={(e) =>
+                                        updateField(index, {
+                                          maxSize:
+                                            parseFloat(e.target.value) || 10,
+                                        })
+                                      }
+                                      min="0.001"
+                                      max="100"
+                                      step="0.1"
+                                      className="flex-1 px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-xs focus:outline-none focus:ring-1 focus:ring-heading"
+                                    />
+                                    <span className="text-gray-400 text-xs">
+                                      MB
+                                    </span>
+                                  </div>
+                                  <p className="text-gray-500 text-xs mt-1">
+                                    {field.maxSize && field.maxSize < 1
+                                      ? `${Math.round(field.maxSize * 1024)} KB`
+                                      : `${field.maxSize || 10} MB`}
+                                  </p>
+                                </div>
+
+                                {/* Quick Size Presets */}
+                                <div>
+                                  <label className="block text-gray-300 text-xs mb-1">
+                                    Quick Presets
+                                  </label>
+                                  <div className="flex flex-wrap gap-1">
+                                    {[
+                                      { label: "500KB", value: 0.5 },
+                                      { label: "1MB", value: 1 },
+                                      { label: "5MB", value: 5 },
+                                      { label: "10MB", value: 10 },
+                                    ].map((preset) => (
+                                      <button
+                                        key={preset.label}
+                                        type="button"
+                                        onClick={() =>
+                                          updateField(index, {
+                                            maxSize: preset.value,
+                                          })
+                                        }
+                                        className={`px-2 py-1 text-xs rounded transition-colors ${
+                                          field.maxSize === preset.value
+                                            ? "bg-heading/30 text-heading border border-heading/50"
+                                            : "bg-gray-700 text-gray-300 border border-gray-600 hover:bg-gray-600"
+                                        }`}
+                                      >
+                                        {preset.label}
+                                      </button>
+                                    ))}
+                                  </div>
+                                </div>
+                              </div>
+
+                              {/* Allowed File Formats */}
+                              <div>
+                                <label className="block text-gray-300 text-xs mb-1">
+                                  Allowed File Formats
+                                </label>
+                                <div className="space-y-2">
+                                  {/* Common Format Checkboxes */}
+                                  <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+                                    {[
+                                      { label: "PDF", value: "pdf" },
+                                      { label: "Word", value: "doc,docx" },
+                                      {
+                                        label: "PowerPoint",
+                                        value: "ppt,pptx",
+                                      },
+                                      { label: "Excel", value: "xls,xlsx" },
+                                      {
+                                        label: "Images",
+                                        value: "jpg,jpeg,png,gif",
+                                      },
+                                      { label: "Text", value: "txt,rtf" },
+                                      { label: "Video", value: "mp4,avi,mov" },
+                                      { label: "Audio", value: "mp3,wav,aac" },
+                                    ].map((formatGroup) => {
+                                      const formats =
+                                        formatGroup.value.split(",");
+                                      const isSelected = formats.some(
+                                        (format) =>
+                                          field.acceptedFormats?.includes(
+                                            format
+                                          )
+                                      );
+
+                                      return (
+                                        <label
+                                          key={formatGroup.label}
+                                          className="flex items-center gap-2"
+                                        >
+                                          <input
+                                            type="checkbox"
+                                            checked={isSelected}
+                                            onChange={(e) => {
+                                              const currentFormats =
+                                                field.acceptedFormats || [];
+                                              let newFormats;
+
+                                              if (e.target.checked) {
+                                                newFormats = [
+                                                  ...new Set([
+                                                    ...currentFormats,
+                                                    ...formats,
+                                                  ]),
+                                                ];
+                                              } else {
+                                                newFormats =
+                                                  currentFormats.filter(
+                                                    (f) => !formats.includes(f)
+                                                  );
+                                              }
+
+                                              updateField(index, {
+                                                acceptedFormats: newFormats,
+                                              });
+                                            }}
+                                            className="w-3 h-3 text-heading focus:ring-heading border-gray-600 rounded"
+                                          />
+                                          <span className="text-white text-xs">
+                                            {formatGroup.label}
+                                          </span>
+                                        </label>
+                                      );
+                                    })}
+                                  </div>
+
+                                  {/* Custom Format Input */}
+                                  <div>
+                                    <input
+                                      type="text"
+                                      placeholder="Custom formats (comma-separated, e.g., zip,rar)"
+                                      onKeyDown={(e) => {
+                                        if (e.key === "Enter") {
+                                          e.preventDefault();
+                                          const input =
+                                            e.target as HTMLInputElement;
+                                          const customFormats = input.value
+                                            .split(",")
+                                            .map((f) => f.trim().toLowerCase())
+                                            .filter((f) => f);
+
+                                          if (customFormats.length > 0) {
+                                            const currentFormats =
+                                              field.acceptedFormats || [];
+                                            const newFormats = [
+                                              ...new Set([
+                                                ...currentFormats,
+                                                ...customFormats,
+                                              ]),
+                                            ];
+                                            updateField(index, {
+                                              acceptedFormats: newFormats,
+                                            });
+                                            input.value = "";
+                                          }
+                                        }
+                                      }}
+                                      className="w-full px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-xs focus:outline-none focus:ring-1 focus:ring-heading"
+                                    />
+                                  </div>
+
+                                  {/* Selected Formats Display */}
+                                  {field.acceptedFormats &&
+                                    field.acceptedFormats.length > 0 && (
+                                      <div className="flex flex-wrap gap-1">
+                                        {field.acceptedFormats.map(
+                                          (format, formatIndex) => (
+                                            <span
+                                              key={formatIndex}
+                                              className="inline-flex items-center gap-1 px-2 py-1 bg-heading/20 text-heading text-xs rounded border border-heading/30"
+                                            >
+                                              .{format}
+                                              <button
+                                                type="button"
+                                                onClick={() => {
+                                                  const newFormats =
+                                                    field.acceptedFormats?.filter(
+                                                      (_, i) =>
+                                                        i !== formatIndex
+                                                    ) || [];
+                                                  updateField(index, {
+                                                    acceptedFormats: newFormats,
+                                                  });
+                                                }}
+                                                className="text-heading hover:text-red-400 ml-1"
+                                              >
+                                                ×
+                                              </button>
+                                            </span>
+                                          )
+                                        )}
+                                      </div>
+                                    )}
+                                </div>
+                              </div>
+                            </div>
+                          )}
+
+                          {/* Text Field Specific Controls */}
+                          {(field.type === "text" ||
+                            field.type === "textarea") && (
+                            <div className="space-y-3 border-t border-gray-700 pt-3">
+                              <h5 className="text-sm font-medium text-white">
+                                Text Field Settings
+                              </h5>
+                              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                <div>
+                                  <label className="block text-gray-300 text-xs mb-1">
+                                    Placeholder Text
+                                  </label>
+                                  <input
+                                    type="text"
+                                    value={field.placeholder || ""}
+                                    onChange={(e) =>
+                                      updateField(index, {
+                                        placeholder: e.target.value,
+                                      })
+                                    }
+                                    placeholder="Enter placeholder text"
+                                    className="w-full px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-xs focus:outline-none focus:ring-1 focus:ring-heading"
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-gray-300 text-xs mb-1">
+                                    Max Length
+                                  </label>
+                                  <input
+                                    type="number"
+                                    value={field.maxLength || 500}
+                                    onChange={(e) =>
+                                      updateField(index, {
+                                        maxLength:
+                                          parseInt(e.target.value) || 500,
+                                      })
+                                    }
+                                    min="1"
+                                    max="10000"
+                                    className="w-full px-2 py-1 bg-gray-700 border border-gray-600 rounded text-white text-xs focus:outline-none focus:ring-1 focus:ring-heading"
+                                  />
+                                </div>
+                              </div>
+                            </div>
+                          )}
                         </div>
                       ))}
                     </div>
@@ -440,17 +1104,24 @@ export default function TasksManagement() {
                   {/* Actions */}
                   <div className="flex gap-3 pt-6 border-t border-gray-700">
                     <button
-                      onClick={() => setShowCreateForm(false)}
+                      onClick={() => {
+                        setShowCreateForm(false);
+                        resetTaskForm();
+                      }}
                       className="px-6 py-2 bg-gray-800 border border-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={createTask}
-                      disabled={submitting || !newTask.title.trim() || newTask.assignedTo.length === 0}
+                      disabled={
+                        submitting ||
+                        !newTask.title.trim() ||
+                        newTask.assignedTo.length === 0
+                      }
                       className="px-6 py-2 bg-heading/20 border border-heading/30 text-heading rounded-lg hover:bg-heading/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      {submitting ? 'Creating...' : 'Create Task'}
+                      {submitting ? "Creating..." : "Create Task"}
                     </button>
                   </div>
                 </div>

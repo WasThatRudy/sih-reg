@@ -16,7 +16,7 @@ export interface ITaskSubmission {
   taskId: Types.ObjectId;
   submittedAt: Date;
   files?: string[]; // Cloudinary URLs
-  textResponse?: string;
+  data?: Record<string, string | number>; // Form data submitted
   status: "submitted" | "reviewed" | "approved" | "rejected";
   feedback?: string;
 }
@@ -97,8 +97,8 @@ const taskSubmissionSchema = new Schema<ITaskSubmission>(
         type: String, // Cloudinary URLs
       },
     ],
-    textResponse: {
-      type: String,
+    data: {
+      type: Schema.Types.Mixed, // Record<string, string | number>
     },
     status: {
       type: String,
@@ -171,22 +171,26 @@ teamSchema.pre("save", async function (next) {
     if (!hasFemaleMember) {
       // Import User model dynamically to avoid circular dependency
       const { User } = await import("./User");
-      
+
       // Use the same session if available to ensure we see the updated leader data
       const session = this.$session();
       const leader = await User.findById(this.leader).session(session);
-      
+
       console.log("Team validation - Leader gender check:", {
         leaderId: this.leader,
-        leader: leader ? {
-          email: leader.email,
-          gender: leader.gender,
-          genderLower: leader.gender?.toLowerCase()
-        } : null
+        leader: leader
+          ? {
+              email: leader.email,
+              gender: leader.gender,
+              genderLower: leader.gender?.toLowerCase(),
+            }
+          : null,
       });
-      
+
       if (!leader || leader.gender?.toLowerCase() !== "female") {
-        const error = new Error("Team must have at least one female member (including leader)");
+        const error = new Error(
+          "Team must have at least one female member (including leader)"
+        );
         return next(error);
       }
     }

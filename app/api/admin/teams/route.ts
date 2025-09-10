@@ -25,6 +25,7 @@ export async function GET(request: NextRequest) {
     const search = url.searchParams.get("search");
     const page = parseInt(url.searchParams.get("page") || "1");
     const limit = parseInt(url.searchParams.get("limit") || "10");
+    const all = url.searchParams.get("all") === "true";
     const skip = (page - 1) * limit;
 
     // Build aggregation pipeline for search with populated data
@@ -83,8 +84,10 @@ export async function GET(request: NextRequest) {
     const countResult = await Team.aggregate(countPipeline);
     const totalTeams = countResult.length > 0 ? countResult[0].total : 0;
 
-    // Add pagination
-    pipeline.push({ $skip: skip }, { $limit: limit });
+    // Add pagination (skip if all=true)
+    if (!all) {
+      pipeline.push({ $skip: skip }, { $limit: limit });
+    }
 
     // Execute aggregation
     const teams = await Team.aggregate(pipeline);

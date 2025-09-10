@@ -8,7 +8,8 @@ interface Task {
   title: string;
   description: string;
   fields: TaskField[];
-  assignedTo: string[];
+  assignedTo?: string[];
+  assignedTeamsCount?: number;
   dueDate?: string;
   isActive: boolean;
   createdBy: string;
@@ -16,7 +17,7 @@ interface Task {
 }
 
 interface TaskField {
-  name: string;
+  label: string;
   type: "text" | "textarea" | "file" | "url" | "number" | "date";
   required: boolean;
   description?: string;
@@ -196,7 +197,7 @@ export default function TasksManagement() {
       fields: [
         ...prev.fields,
         {
-          name: "",
+          label: "",
           type: "text",
           required: false,
           description: "",
@@ -355,7 +356,13 @@ export default function TasksManagement() {
                       {task.description}
                     </p>
                     <div className="flex items-center gap-4 text-sm text-gray-500">
-                      <span>Assigned to {task.assignedTo.length} teams</span>
+                      <span>
+                        Assigned to{" "}
+                        {task.assignedTeamsCount ??
+                          task.assignedTo?.length ??
+                          0}{" "}
+                        teams
+                      </span>
                       {task.dueDate && (
                         <span>
                           Due: {new Date(task.dueDate).toLocaleDateString()}
@@ -394,7 +401,7 @@ export default function TasksManagement() {
                         >
                           <div className="flex items-center gap-2 mb-1">
                             <span className="text-white text-sm font-medium">
-                              {field.name}
+                              {field.label}
                             </span>
                             <span
                               className={`text-xs px-2 py-1 rounded ${
@@ -758,11 +765,11 @@ export default function TasksManagement() {
                           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-3">
                             <input
                               type="text"
-                              value={field.name}
+                              value={field.label}
                               onChange={(e) =>
-                                updateField(index, { name: e.target.value })
+                                updateField(index, { label: e.target.value })
                               }
-                              placeholder="Field name"
+                              placeholder="Field label"
                               className="px-3 py-2 bg-gray-700 border border-gray-600 rounded text-white text-sm focus:outline-none focus:ring-2 focus:ring-heading"
                             />
                             <select
@@ -1117,7 +1124,7 @@ export default function TasksManagement() {
                       disabled={
                         submitting ||
                         !newTask.title.trim() ||
-                        newTask.assignedTo.length === 0
+                        (newTask.assignedTo?.length || 0) === 0
                       }
                       className="px-6 py-2 bg-heading/20 border border-heading/30 text-heading rounded-lg hover:bg-heading/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                     >

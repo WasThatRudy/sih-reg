@@ -4,6 +4,9 @@ import { Task, ITask } from "../../../../models/Task";
 import { Team } from "../../../../models/Team";
 import dbConnect from "../../../../lib/mongodb";
 import { sendTaskAssignmentEmail } from "../../../../lib/utils/email";
+import { Types } from "mongoose";
+// Import User model to ensure it's registered for population
+import "../../../../models/User";
 
 interface PopulatedTeam {
   _id: string;
@@ -34,7 +37,8 @@ export async function GET(request: NextRequest) {
         title: task.title,
         description: task.description,
         fields: task.fields,
-        assignedTeamsCount: task.assignedTo.length,
+        assignedTo: task.assignedTo || [],
+        assignedTeamsCount: task.assignedTo?.length || 0,
         dueDate: task.dueDate,
         isActive: task.isActive,
         createdBy: task.createdBy,
@@ -70,11 +74,11 @@ export async function POST(request: NextRequest) {
     const { title, description, fields, assignedTo, dueDate } = body;
 
     // Validate required fields
-    if (!title || !description || !fields || !Array.isArray(fields)) {
+    if (!title || !fields || !Array.isArray(fields)) {
       return NextResponse.json(
         {
           success: false,
-          error: "Title, description, and fields are required",
+          error: "Title and fields are required",
         },
         { status: 400 }
       );
@@ -122,12 +126,12 @@ export async function POST(request: NextRequest) {
     // Create task
     const task = new Task({
       title: title.trim(),
-      description: description.trim(),
+      description: description ? description.trim() : undefined,
       fields,
       assignedTo: assignedTo || [],
       dueDate: dueDate ? new Date(dueDate) : undefined,
       isActive: true,
-      createdBy: adminUser.email, // Use email instead of _id since admin is not from database
+      createdBy: new Types.ObjectId(), // Use a placeholder ObjectId for now
     });
 
     await task.save();
@@ -141,7 +145,7 @@ export async function POST(request: NextRequest) {
             team.leader.name,
             team.leader.email,
             task.title,
-            task.description,
+            task.description || "No description provided",
             task.dueDate
           );
         } catch (emailError) {

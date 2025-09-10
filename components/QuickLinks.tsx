@@ -1,47 +1,57 @@
-'use client';
-import { motion } from 'framer-motion';
-import Link from 'next/link';
+"use client";
+import { motion } from "framer-motion";
+import Link from "next/link";
+import { useAuth } from "@/lib/context/AuthContext";
 
 interface QuickLinksProps {
   className?: string;
 }
 
-export default function QuickLinks({ className = '' }: QuickLinksProps) {
-  const links = [
+export default function QuickLinks({ className = "" }: QuickLinksProps) {
+  const { hasTeam } = useAuth();
+
+  const baseLinks = [
     {
-      title: 'Problem Statements',
-      description: 'Browse available challenges',
-      href: '/problem-statements',
-      icon: '📋',
-      color: 'from-blue-500 to-blue-600'
+      title: "Problem Statements",
+      description: "Browse available challenges",
+      href: "/problem-statements",
+      icon: "📋",
+      color: "from-blue-500 to-blue-600",
     },
     {
-      title: 'Team Registration',
-      description: 'Register your team now',
-      href: '/registration',
-      icon: '👥',
-      color: 'from-purple-500 to-purple-600'
+      title: hasTeam ? "Team Dashboard" : "Team Registration",
+      description: hasTeam ? "Manage your team" : "Register your team now",
+      href: hasTeam ? "/team-info" : "/registration",
+      icon: hasTeam ? "🏠" : "👥",
+      color: hasTeam
+        ? "from-orange-500 to-orange-600"
+        : "from-purple-500 to-purple-600",
     },
     {
-      title: 'Login / Signup',
-      description: 'Access your account',
-      href: '/login',
-      icon: '🔑',
-      color: 'from-green-500 to-green-600'
+      title: "Login / Signup",
+      description: "Access your account",
+      href: "/login",
+      icon: "🔑",
+      color: "from-green-500 to-green-600",
     },
-    {
-      title: 'Team Dashboard',
-      description: 'Manage your team',
-      href: '/team-info',
-      icon: '🏠',
-      color: 'from-orange-500 to-orange-600'
-    }
   ];
+
+  const teamTasksLink = {
+    title: "My Tasks",
+    description: "View and submit tasks",
+    href: "/team-tasks",
+    icon: "📝",
+    color: "from-indigo-500 to-indigo-600",
+  };
+
+  const links = hasTeam
+    ? [...baseLinks.slice(0, 2), teamTasksLink, baseLinks[2]]
+    : baseLinks;
 
   return (
     <section className={`py-16 px-6 bg-background/50 ${className}`}>
       <div className="max-w-6xl mx-auto">
-        <motion.div 
+        <motion.div
           className="text-center mb-12"
           initial={{ opacity: 0, y: 20 }}
           whileInView={{ opacity: 1, y: 0 }}
@@ -65,10 +75,7 @@ export default function QuickLinks({ className = '' }: QuickLinksProps) {
               viewport={{ once: true }}
               transition={{ duration: 0.6, delay: index * 0.1 }}
             >
-              <Link
-                href={link.href}
-                className="group block"
-              >
+              <Link href={link.href} className="group block">
                 <motion.div
                   className={`bg-gradient-to-br ${link.color} p-6 rounded-xl text-white hover:shadow-lg transition-all duration-300 h-full`}
                   whileHover={{ scale: 1.02, y: -4 }}

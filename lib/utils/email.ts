@@ -148,7 +148,7 @@ export async function sendTaskAssignmentEmail(
   leaderName: string,
   leaderEmail: string,
   taskTitle: string,
-  taskDescription: string,
+  taskDescription?: string,
   dueDate?: Date
 ): Promise<void> {
   const subject = `SIH 2025 - New Task Assigned: ${taskTitle}`;
@@ -192,7 +192,11 @@ export async function sendTaskAssignmentEmail(
                     <h3>📋 Task Details:</h3>
                     <ul>
                         <li><strong>Task:</strong> ${taskTitle}</li>
-                        <li><strong>Description:</strong> ${taskDescription}</li>
+                        ${
+                          taskDescription
+                            ? `<li><strong>Description:</strong> ${taskDescription}</li>`
+                            : ""
+                        }
                         ${dueDateText}
                     </ul>
                 </div>
@@ -216,6 +220,8 @@ export async function sendTaskAssignmentEmail(
     to: leaderEmail,
     subject,
     html,
-    text: `Hello ${leaderName}, A new task "${taskTitle}" has been assigned to your team "${teamName}". ${taskDescription}`,
+    text: `Hello ${leaderName}, A new task "${taskTitle}" has been assigned to your team "${teamName}".${
+      taskDescription ? ` ${taskDescription}` : ""
+    }`,
   });
 }

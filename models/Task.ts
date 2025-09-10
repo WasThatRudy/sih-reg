@@ -16,7 +16,7 @@ export interface ITaskField {
 export interface ITask extends Document {
   _id: Types.ObjectId;
   title: string;
-  description: string;
+  description?: string;
   fields: ITaskField[];
   assignedTo: Types.ObjectId[]; // References to Team documents
   dueDate?: Date;
@@ -82,7 +82,8 @@ const taskSchema = new Schema<ITask>(
     },
     description: {
       type: String,
-      required: true,
+      required: false,
+      trim: true,
     },
     fields: {
       type: [taskFieldSchema],

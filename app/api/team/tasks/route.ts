@@ -3,6 +3,8 @@ import { verifyAuth } from "@/lib/middleware/auth";
 import { Task } from "@/models/Task";
 import { Team } from "@/models/Team";
 import dbConnect from "@/lib/mongodb";
+// Import User model to ensure it's registered
+import "@/models/User";
 
 // GET /api/team/tasks - Get tasks assigned to the authenticated team leader's team
 export async function GET(request: NextRequest) {
@@ -58,6 +60,12 @@ export async function GET(request: NextRequest) {
     });
   } catch (error: unknown) {
     console.error("Get team tasks error:", error);
+
+    // More detailed error logging
+    if (error instanceof Error) {
+      console.error("Error message:", error.message);
+      console.error("Error stack:", error.stack);
+    }
 
     return NextResponse.json(
       { success: false, error: "Failed to get team tasks" },

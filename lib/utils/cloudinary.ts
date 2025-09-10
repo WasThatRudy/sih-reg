@@ -28,12 +28,28 @@ export async function uploadToCloudinary(
   resourceType: "image" | "video" | "raw" | "auto" = "auto"
 ): Promise<UploadResult> {
   try {
-    const result = await cloudinary.uploader.upload(file as string, {
-      folder,
-      resource_type: resourceType,
-      use_filename: true,
-      unique_filename: true,
-    });
+    let result;
+
+    if (Buffer.isBuffer(file)) {
+      // For Buffer, convert to base64 data URI
+      const base64Data = file.toString("base64");
+      const dataUri = `data:application/octet-stream;base64,${base64Data}`;
+
+      result = await cloudinary.uploader.upload(dataUri, {
+        folder,
+        resource_type: resourceType,
+        use_filename: true,
+        unique_filename: true,
+      });
+    } else {
+      // For string (file path), upload directly
+      result = await cloudinary.uploader.upload(file, {
+        folder,
+        resource_type: resourceType,
+        use_filename: true,
+        unique_filename: true,
+      });
+    }
 
     return {
       public_id: result.public_id,

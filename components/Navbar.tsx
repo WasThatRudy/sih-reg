@@ -1,16 +1,16 @@
-'use client';
-import { motion, AnimatePresence } from 'framer-motion';
-import Link from 'next/link';
-import Image from 'next/image';
-import { useAuth } from '@/lib/context/AuthContext';
-import { useState } from 'react';
+"use client";
+import { motion, AnimatePresence } from "framer-motion";
+import Link from "next/link";
+import Image from "next/image";
+import { useAuth } from "@/lib/context/AuthContext";
+import { useState } from "react";
 
 export default function Navbar() {
   const { user, signOut, loading, hasTeam } = useAuth();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   return (
     <>
-      <motion.nav 
+      <motion.nav
         className="fixed top-0 left-0 right-0 z-50 bg-background/90 backdrop-blur-sm border-b border-gray-800/30"
         initial={{ y: -100, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
@@ -24,11 +24,11 @@ export default function Navbar() {
               transition={{ type: "spring", stiffness: 400, damping: 17 }}
             >
               <Link href="/" className="flex items-center gap-2">
-                <Image 
-                  src="https://www.pointblank.club/_next/static/media/logo.8d55ed6e.svg" 
-                  alt="DSCE Logo" 
-                  width={120} 
-                  height={8} 
+                <Image
+                  src="https://www.pointblank.club/_next/static/media/logo.8d55ed6e.svg"
+                  alt="DSCE Logo"
+                  width={120}
+                  height={8}
                   className="sm:w-[150px] sm:h-[10px]"
                 />
               </Link>
@@ -40,7 +40,7 @@ export default function Navbar() {
                 whileHover={{ y: -1 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
-                <Link 
+                <Link
                   href="/problem-statements"
                   className="text-gray-300 hover:text-subheading transition-colors duration-300 tracking-wide font-body text-sm"
                 >
@@ -52,13 +52,31 @@ export default function Navbar() {
                 whileHover={{ y: -1 }}
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
-                <Link 
+                <Link
                   href={hasTeam ? "/team-info" : "/registration"}
-                  className={`${hasTeam ? 'text-gray-300 hover:text-subheading' : 'text-gray-300 hover:text-heading'} transition-colors duration-300 tracking-wide font-body text-sm`}
+                  className={`${
+                    hasTeam
+                      ? "text-gray-300 hover:text-subheading"
+                      : "text-gray-300 hover:text-heading"
+                  } transition-colors duration-300 tracking-wide font-body text-sm`}
                 >
                   {hasTeam ? "Team Info" : "Registration"}
                 </Link>
               </motion.div>
+
+              {hasTeam && (
+                <motion.div
+                  whileHover={{ y: -1 }}
+                  transition={{ type: "spring", stiffness: 400, damping: 17 }}
+                >
+                  <Link
+                    href="/team-tasks"
+                    className="text-gray-300 hover:text-heading transition-colors duration-300 tracking-wide font-body text-sm"
+                  >
+                    My Tasks
+                  </Link>
+                </motion.div>
+              )}
 
               {/* Desktop Auth Links */}
               {!loading && user && (
@@ -67,7 +85,8 @@ export default function Navbar() {
                     Welcome, {user.displayName || user.email}
                   </span>
                   <span className="text-gray-400 hover:text-gray-300 text-sm font-body cursor-pointer transition-colors duration-300 lg:hidden">
-                    {user.displayName?.split(' ')[0] || user.email?.split('@')[0]}
+                    {user.displayName?.split(" ")[0] ||
+                      user.email?.split("@")[0]}
                   </span>
                   <motion.button
                     onClick={() => signOut()}
@@ -93,14 +112,14 @@ export default function Navbar() {
                   className="w-6 h-0.5 bg-current absolute"
                   animate={{
                     rotate: isMobileMenuOpen ? 45 : 0,
-                    y: isMobileMenuOpen ? 0 : -6
+                    y: isMobileMenuOpen ? 0 : -6,
                   }}
                   transition={{ duration: 0.3 }}
                 />
                 <motion.span
                   className="w-6 h-0.5 bg-current absolute"
                   animate={{
-                    opacity: isMobileMenuOpen ? 0 : 1
+                    opacity: isMobileMenuOpen ? 0 : 1,
                   }}
                   transition={{ duration: 0.3 }}
                 />
@@ -108,7 +127,7 @@ export default function Navbar() {
                   className="w-6 h-0.5 bg-current absolute"
                   animate={{
                     rotate: isMobileMenuOpen ? -45 : 0,
-                    y: isMobileMenuOpen ? 0 : 6
+                    y: isMobileMenuOpen ? 0 : 6,
                   }}
                   transition={{ duration: 0.3 }}
                 />
@@ -133,7 +152,7 @@ export default function Navbar() {
               className="absolute inset-0 bg-black/60 backdrop-blur-sm"
               onClick={() => setIsMobileMenuOpen(false)}
             />
-            
+
             {/* Mobile Menu Content */}
             <motion.div
               className="absolute top-0 right-0 w-72 h-full bg-background/95 backdrop-blur-md border-l border-gray-800/30"
@@ -150,7 +169,7 @@ export default function Navbar() {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.1, duration: 0.4 }}
                   >
-                    <Link 
+                    <Link
                       href="/problem-statements"
                       onClick={() => setIsMobileMenuOpen(false)}
                       className="block text-gray-300 hover:text-subheading transition-colors duration-300 tracking-wide font-body text-lg py-2"
@@ -164,14 +183,34 @@ export default function Navbar() {
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.2, duration: 0.4 }}
                   >
-                    <Link 
+                    <Link
                       href={hasTeam ? "/team-info" : "/registration"}
                       onClick={() => setIsMobileMenuOpen(false)}
-                      className={`block ${hasTeam ? 'text-gray-300 hover:text-subheading' : 'text-gray-300 hover:text-heading'} transition-colors duration-300 tracking-wide font-body text-lg py-2`}
+                      className={`block ${
+                        hasTeam
+                          ? "text-gray-300 hover:text-subheading"
+                          : "text-gray-300 hover:text-heading"
+                      } transition-colors duration-300 tracking-wide font-body text-lg py-2`}
                     >
                       {hasTeam ? "Team Info" : "Registration"}
                     </Link>
                   </motion.div>
+
+                  {hasTeam && (
+                    <motion.div
+                      initial={{ opacity: 0, x: 20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.25, duration: 0.4 }}
+                    >
+                      <Link
+                        href="/team-tasks"
+                        onClick={() => setIsMobileMenuOpen(false)}
+                        className="block text-gray-300 hover:text-heading transition-colors duration-300 tracking-wide font-body text-lg py-2"
+                      >
+                        My Tasks
+                      </Link>
+                    </motion.div>
+                  )}
 
                   {/* Mobile Auth Section */}
                   {!loading && user && (
@@ -208,4 +247,3 @@ export default function Navbar() {
     </>
   );
 }
-

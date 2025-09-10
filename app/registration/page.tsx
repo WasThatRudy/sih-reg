@@ -33,6 +33,13 @@ interface Team {
   status: string;
 }
 
+interface ConflictDetail {
+  email?: string;
+  phone?: string;
+  conflictingTeams: string[];
+  memberType: string;
+}
+
 export default function Registration() {
   const { user, refreshTeamStatus } = useAuth();
 
@@ -196,7 +203,37 @@ export default function Registration() {
             `Please logout as admin (${error.adminEmail}) first, then login as a regular user to register your team.`
           );
         } else {
-          alert(`Registration failed: ${error.error || error.message}`);
+          // Handle cross-team validation errors with detailed information
+          if (error.duplicateDetails && (error.duplicateDetails.emailConflicts?.length > 0 || error.duplicateDetails.phoneConflicts?.length > 0)) {
+            let detailedMessage = "Registration failed due to duplicate contact information:\n\n";
+            
+            // Show email conflicts
+            if (error.duplicateDetails.emailConflicts?.length > 0) {
+              detailedMessage += "📧 Email Conflicts:\n";
+              error.duplicateDetails.emailConflicts.forEach((conflict: ConflictDetail) => {
+                detailedMessage += `• ${conflict.memberType}: ${conflict.email}\n`;
+                detailedMessage += `  Already used in: ${conflict.conflictingTeams.join(', ')}\n\n`;
+              });
+            }
+            
+            // Show phone conflicts
+            if (error.duplicateDetails.phoneConflicts?.length > 0) {
+              detailedMessage += "📱 Phone Conflicts:\n";
+              error.duplicateDetails.phoneConflicts.forEach((conflict: ConflictDetail) => {
+                detailedMessage += `• ${conflict.memberType}: ${conflict.phone}\n`;
+                detailedMessage += `  Already used in: ${conflict.conflictingTeams.join(', ')}\n\n`;
+              });
+            }
+            
+            detailedMessage += "Please update the conflicting contact information and try again.";
+            alert(detailedMessage);
+          } else if (error.errors && Array.isArray(error.errors)) {
+            // Handle array of error messages
+            alert(`Registration failed:\n\n${error.errors.join('\n')}`);
+          } else {
+            // Handle generic errors
+            alert(`Registration failed: ${error.error || error.message}`);
+          }
         }
       }
     } catch (error) {

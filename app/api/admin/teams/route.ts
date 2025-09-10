@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "../../../../lib/middleware/adminAuth";
 import dbConnect from "../../../../lib/mongodb";
-import { Team, ITeam } from "../../../../models/Team";
+import { Team } from "../../../../models/Team";
 import { User } from "../../../../models/User";
 import { ProblemStatement } from "../../../../models/ProblemStatement";
 import { DeletedTeam } from "../../../../models/DeletedTeam";
@@ -27,39 +27,89 @@ export async function GET(request: NextRequest) {
     const limit = parseInt(url.searchParams.get("limit") || "10");
     const skip = (page - 1) * limit;
 
-    // Build query
-    const query: Record<string, unknown> = {};
+    // Build aggregation pipeline for search with populated data
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const pipeline: any[] = [
+      // Lookup leader data
+      {
+        $lookup: {
+          from: "users",
+          localField: "leader",
+          foreignField: "_id",
+          as: "leader",
+        },
+      },
+      { $unwind: "$leader" },
+
+      // Lookup problem statement data
+      {
+        $lookup: {
+          from: "problemstatements",
+          localField: "problemStatement",
+          foreignField: "_id",
+          as: "problemStatement",
+        },
+      },
+      { $unwind: "$problemStatement" },
+    ];
+
+    // Add search conditions
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const matchConditions: any = {};
 
     if (status && status !== "all") {
-      query.status = status;
+      matchConditions.status = status;
     }
 
     if (search) {
-      query.$or = [{ teamName: { $regex: search, $options: "i" } }];
+      matchConditions.$or = [
+        { teamName: { $regex: search, $options: "i" } },
+        { "leader.name": { $regex: search, $options: "i" } },
+        { "leader.email": { $regex: search, $options: "i" } },
+        { "problemStatement.psNumber": { $regex: search, $options: "i" } },
+        { "problemStatement.title": { $regex: search, $options: "i" } },
+      ];
     }
 
-    // Get teams with pagination
-    const teams = await Team.find(query)
-      .populate("leader", "name email phone")
-      .populate("problemStatement", "psNumber title domain")
-      .sort({ registrationDate: -1 })
-      .skip(skip)
-      .limit(limit)
-      .lean();
+    if (Object.keys(matchConditions).length > 0) {
+      pipeline.push({ $match: matchConditions });
+    }
 
-    const totalTeams = await Team.countDocuments(query);
+    // Add sorting
+    pipeline.push({ $sort: { registrationDate: -1 } });
+
+    // Get total count for pagination
+    const countPipeline = [...pipeline, { $count: "total" }];
+    const countResult = await Team.aggregate(countPipeline);
+    const totalTeams = countResult.length > 0 ? countResult[0].total : 0;
+
+    // Add pagination
+    pipeline.push({ $skip: skip }, { $limit: limit });
+
+    // Execute aggregation
+    const teams = await Team.aggregate(pipeline);
 
     return NextResponse.json({
       success: true,
-      teams: teams.map((team: ITeam) => ({
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      teams: teams.map((team: any) => ({
         _id: team._id,
         teamName: team.teamName,
-        leader: team.leader,
-        problemStatement: team.problemStatement,
+        leader: {
+          name: team.leader.name,
+          email: team.leader.email,
+          phone: team.leader.phone,
+        },
+        problemStatement: {
+          psNumber: team.problemStatement.psNumber,
+          title: team.problemStatement.title,
+          domain: team.problemStatement.domain,
+        },
         status: team.status,
         registrationDate: team.registrationDate,
         memberCount: team.members.length,
         taskCount: team.tasks.length,
+        createdAt: team.createdAt,
       })),
       total: totalTeams,
       pagination: {

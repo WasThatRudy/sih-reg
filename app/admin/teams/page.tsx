@@ -220,15 +220,8 @@ export default function TeamsManagement() {
   };
 
   const filteredTeams = teams.filter((team) => {
-    const matchesSearch =
-      searchTerm === "" ||
-      team.teamName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      team.leader.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      team.leader.email.toLowerCase().includes(searchTerm.toLowerCase());
-
     const matchesFilter = filter === "all" || team.status === filter;
-
-    return matchesSearch && matchesFilter;
+    return matchesFilter;
   });
 
   return (
@@ -253,7 +246,7 @@ export default function TeamsManagement() {
             <div className="flex-1">
               <input
                 type="text"
-                placeholder="Search teams, leaders, or emails..."
+                placeholder="Search teams, leaders, emails, or problem statements..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="w-full px-4 py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-heading focus:border-heading"

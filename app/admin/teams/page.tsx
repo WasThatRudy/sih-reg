@@ -353,10 +353,23 @@ export default function TeamsManagement() {
                         </td>
                         <td className="px-6 py-4">
                           <div>
-                            <p className="text-white font-medium">
-                              {team.problemStatement.psNumber}
+                            <p
+                              className="text-white font-medium"
+                              title={team.problemStatement.psNumber}
+                            >
+                              {(() => {
+                                const psNumbers =
+                                  team.problemStatement.psNumber.split("/");
+                                if (psNumbers.length <= 2) {
+                                  return team.problemStatement.psNumber;
+                                }
+                                return `${psNumbers[0]}/${psNumbers[1]}.....`;
+                              })()}
                             </p>
-                            <p className="text-gray-400 text-sm truncate max-w-xs">
+                            <p
+                              className="text-gray-400 text-sm truncate max-w-[120px]"
+                              title={team.problemStatement.title}
+                            >
                               {team.problemStatement.title}
                             </p>
                           </div>

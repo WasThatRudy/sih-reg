@@ -1,4 +1,8 @@
-import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
+import {
+  v2 as cloudinary,
+  UploadApiResponse,
+  UploadApiOptions,
+} from "cloudinary";
 
 // Configure Cloudinary
 cloudinary.config({
@@ -13,59 +17,84 @@ export interface UploadResult {
   format: string;
   resource_type: string;
   bytes: number;
+  version: number;
+  asset_id: string;
+}
+
+export interface CloudinaryUploadOptions {
+  folder?: string;
+  resource_type?: "image" | "video" | "raw" | "auto";
+  type?: "upload" | "private" | "authenticated";
+  access_mode?: "public" | "authenticated";
+  use_filename?: boolean;
+  unique_filename?: boolean;
+  overwrite?: boolean;
+  tags?: string[];
+  format?: string;
 }
 
 /**
- * Upload file to Cloudinary
- * @param file - File buffer or base64 string
- * @param folder - Folder to upload to in Cloudinary
- * @param resourceType - Type of resource (image, video, raw, auto)
- * @param filename - Original filename (optional)
+ * Upload file to Cloudinary - Simplified according to documentation
+ * @param file - File path, buffer, base64 string, or remote URL
+ * @param options - Upload options
  * @returns Promise with upload result
  */
 export async function uploadToCloudinary(
-  file: Buffer | string,
-  folder: string = "sih-reg",
-  resourceType: "image" | "video" | "raw" | "auto" = "auto",
-  filename?: string
+  file: string | Buffer,
+  options: CloudinaryUploadOptions = {}
 ): Promise<UploadResult> {
   try {
+    // Set sensible defaults based on Cloudinary documentation
+    const uploadOptions: UploadApiOptions = {
+      folder: options.folder || "sih-reg",
+      resource_type: options.resource_type || "auto", // auto-detect is recommended
+      use_filename: options.use_filename ?? false,
+      unique_filename: options.unique_filename ?? true,
+      overwrite: options.overwrite ?? true, // Default true as per docs
+      ...options,
+    };
+
+    console.log("Cloudinary upload options:", uploadOptions);
+
+    // Convert tags array to comma-separated string if provided
+    if (options.tags && Array.isArray(options.tags)) {
+      uploadOptions.tags = options.tags.join(",");
+    }
+
     let result: UploadApiResponse;
 
+    // Use upload_stream for buffers, direct upload for everything else
     if (Buffer.isBuffer(file)) {
-      // For Buffer uploads, use the stream upload method
+      console.log(`Uploading buffer of size: ${file.length} bytes`);
       result = await new Promise<UploadApiResponse>((resolve, reject) => {
         const uploadStream = cloudinary.uploader.upload_stream(
-          {
-            folder,
-            resource_type: resourceType,
-            use_filename: filename ? true : false,
-            filename_override: filename ? filename.split('.')[0] : undefined, // Remove extension, Cloudinary will auto-detect
-            unique_filename: true,
-            overwrite: false,
-          },
+          uploadOptions,
           (error, result) => {
             if (error) {
+              console.error("Upload stream error:", error);
               reject(error);
             } else if (result) {
+              console.log("Upload stream success:", {
+                public_id: result.public_id,
+                secure_url: result.secure_url,
+                resource_type: result.resource_type,
+                format: result.format,
+              });
               resolve(result);
             } else {
-              reject(new Error("Upload failed - no result"));
+              reject(new Error("Upload failed - no result returned"));
             }
           }
         );
-        
-        // Write the buffer to the stream
         uploadStream.end(file);
       });
     } else {
-      // For string (file path), upload directly
-      result = await cloudinary.uploader.upload(file, {
-        folder,
-        resource_type: resourceType,
-        use_filename: true,
-        unique_filename: true,
-      });
+      // For strings (file paths, URLs, base64), use direct upload
+      console.log(
+        "Uploading string/URL:",
+        typeof file === "string" ? file.substring(0, 100) + "..." : file
+      );
+      result = await cloudinary.uploader.upload(file, uploadOptions);
     }
 
     return {
@@ -74,63 +103,28 @@ export async function uploadToCloudinary(
       format: result.format,
       resource_type: result.resource_type,
       bytes: result.bytes,
+      version: result.version,
+      asset_id: result.asset_id,
     };
-  } catch (error) {
-    console.error("Error uploading to Cloudinary:", error);
-    throw new Error("Failed to upload file to Cloudinary");
+  } catch (error: unknown) {
+    console.error("Cloudinary upload error:", error);
+
+    const err = error as { http_code?: number; message?: string };
+    // Provide more specific error messages
+    if (err.http_code === 400) {
+      throw new Error(`Invalid upload parameters: ${err.message}`);
+    } else if (err.http_code === 401) {
+      throw new Error(
+        "Cloudinary authentication failed - check your credentials"
+      );
+    } else if (err.http_code === 403) {
+      throw new Error("Cloudinary upload forbidden - check your permissions");
+    } else {
+      throw new Error(
+        `Cloudinary upload failed: ${err.message || "Unknown error"}`
+      );
+    }
   }
-}
-
-/**
- * Delete file from Cloudinary
- * @param publicId - Public ID of the file to delete
- * @param resourceType - Type of resource
- * @returns Promise with deletion result
- */
-export async function deleteFromCloudinary(
-  publicId: string,
-  resourceType: "image" | "video" | "raw" = "raw"
-): Promise<{ result: string }> {
-  try {
-    const result = await cloudinary.uploader.destroy(publicId, {
-      resource_type: resourceType,
-    });
-    return result;
-  } catch (error) {
-    console.error("Error deleting from Cloudinary:", error);
-    throw new Error("Failed to delete file from Cloudinary");
-  }
-}
-
-/**
- * Generate a signed upload URL for direct uploads
- * @param folder - Folder to upload to
- * @param resourceType - Type of resource
- * @returns Signed upload parameters
- */
-export function generateSignedUploadUrl(
-  folder: string = "sih-reg",
-  resourceType: "image" | "video" | "raw" | "auto" = "auto"
-) {
-  const timestamp = Math.round(new Date().getTime() / 1000);
-
-  const signature = cloudinary.utils.api_sign_request(
-    {
-      timestamp,
-      folder,
-      resource_type: resourceType,
-    },
-    process.env.CLOUDINARY_API_SECRET!
-  );
-
-  return {
-    timestamp,
-    signature,
-    api_key: process.env.CLOUDINARY_API_KEY,
-    cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
-    folder,
-    resource_type: resourceType,
-  };
 }
 
 export default cloudinary;

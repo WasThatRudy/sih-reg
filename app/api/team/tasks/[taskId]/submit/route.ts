@@ -122,19 +122,74 @@ export async function POST(
           // Convert File to Buffer
           const fileBuffer = Buffer.from(await fieldValue.arrayBuffer());
 
-          // Upload with original filename preserved
-          const uploadResult = await uploadToCloudinary(
-            fileBuffer,
-            "task-submissions",
-            "auto", // Let Cloudinary auto-detect the resource type
-            fieldValue.name // Pass the original filename
+          console.log(
+            `Uploading file: ${fieldValue.name}, size: ${fileBuffer.length}, type: ${fieldValue.type}`
           );
+
+          // Determine resource type and format based on file type
+          let resourceType: "auto" | "raw" = "auto";
+          let format: string | undefined;
+
+          // Extract file extension for format
+          const fileExtension = fieldValue.name.toLowerCase().split(".").pop();
+
+          if (
+            fieldValue.type === "application/pdf" ||
+            fieldValue.name.toLowerCase().endsWith(".pdf")
+          ) {
+            resourceType = "raw"; // Explicitly set PDFs as raw
+            format = "pdf"; // Explicitly set format for PDFs
+          } else if (
+            fileExtension &&
+            ["ppt", "pptx", "doc", "docx"].includes(fileExtension)
+          ) {
+            resourceType = "raw"; // Set document files as raw
+            format = fileExtension; // Use the actual file extension
+          }
+
+          console.log(
+            `Detected format: ${format}, resource_type: ${resourceType}`
+          );
+
+          // Upload with original filename preserved - simplified
+          const uploadResult = await uploadToCloudinary(fileBuffer, {
+            folder: "task-submissions",
+            resource_type: resourceType,
+            type: "upload", // Explicitly set to upload type for public access
+            access_mode: "public", // Ensure public access
+            use_filename: true, // Use original filename
+            unique_filename: true, // Ensure uniqueness
+            overwrite: true, // Ensure files can be overwritten
+            format: format, // Explicitly set format when needed
+          });
+
+          console.log("Upload successful:", {
+            url: uploadResult.secure_url,
+            public_id: uploadResult.public_id,
+            resource_type: uploadResult.resource_type,
+          });
+
+          console.log(`Upload successful:`, {
+            public_id: uploadResult.public_id,
+            secure_url: uploadResult.secure_url,
+            resource_type: uploadResult.resource_type,
+            format: uploadResult.format,
+            bytes: uploadResult.bytes,
+          });
+
           submissionData[field.label] = uploadResult.secure_url;
           uploadedFiles.push(uploadResult.secure_url);
-        } catch (uploadError) {
+        } catch (uploadError: unknown) {
           console.error("File upload error:", uploadError);
+          const errorMessage =
+            uploadError instanceof Error
+              ? uploadError.message
+              : "Unknown upload error";
           return NextResponse.json(
-            { success: false, error: "Failed to upload file" },
+            {
+              success: false,
+              error: `Failed to upload file ${fieldValue.name}: ${errorMessage}`,
+            },
             { status: 500 }
           );
         }

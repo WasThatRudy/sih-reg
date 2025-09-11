@@ -5,6 +5,7 @@ import Navbar from "@/components/Navbar";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { useAuth } from "@/lib/context/AuthContext";
 import FileUploadInfo from "@/components/FileUploadInfo";
+import CountdownTimer from "@/components/ui/CountdownTimer";
 import {
   Calendar,
   Clock,
@@ -336,21 +337,43 @@ export default function TeamTasks() {
                       </p>
                     )}
 
-                    {/* Due Date */}
+                    {/* Due Date & Countdown */}
                     {task.dueDate && (
-                      <div
-                        className={`flex items-center gap-2 text-sm mb-4 ${
-                          overdue ? "text-red-400" : "text-gray-500"
-                        }`}
-                      >
-                        <Calendar className="w-4 h-4" />
-                        <span>
-                          Due: {new Date(task.dueDate).toLocaleDateString()}
-                        </span>
-                        {overdue && (
-                          <span className="text-red-400 font-medium">
-                            (Overdue)
+                      <div className="mb-4 space-y-2">
+                        <div
+                          className={`flex items-center gap-2 text-sm ${
+                            overdue ? "text-red-400" : "text-gray-500"
+                          }`}
+                        >
+                          <Calendar className="w-4 h-4" />
+                          <span>
+                            Due:{" "}
+                            {new Date(task.dueDate).toLocaleString("en-IN", {
+                              timeZone: "Asia/Kolkata",
+                              year: "numeric",
+                              month: "short",
+                              day: "numeric",
+                              hour: "2-digit",
+                              minute: "2-digit",
+                            })}{" "}
+                            IST
                           </span>
+                        </div>
+                        {!overdue ? (
+                          <CountdownTimer
+                            dueDate={task.dueDate}
+                            onExpire={() => {
+                              // Refresh tasks when deadline passes
+                              fetchTasks();
+                            }}
+                          />
+                        ) : (
+                          <div className="flex items-center gap-2 text-red-400">
+                            <AlertCircle className="w-4 h-4" />
+                            <span className="text-sm font-medium">
+                              Deadline Passed
+                            </span>
+                          </div>
                         )}
                       </div>
                     )}
@@ -401,29 +424,37 @@ export default function TeamTasks() {
 
                     {/* Action Buttons */}
                     <div className="flex gap-2">
-                      <button
-                        onClick={() => openSubmissionForm(task)}
-                        disabled={overdue && !task.submission}
-                        className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
-                          overdue && !task.submission
-                            ? "bg-gray-700 text-gray-500 cursor-not-allowed"
-                            : task.submission
-                            ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30 hover:bg-yellow-500/30"
-                            : "bg-heading/20 text-heading border border-heading/30 hover:bg-heading/30"
-                        }`}
-                      >
-                        {task.submission ? (
-                          <>
-                            <Eye className="w-4 h-4" />
-                            View/Edit
-                          </>
-                        ) : (
-                          <>
-                            <Upload className="w-4 h-4" />
-                            Submit
-                          </>
-                        )}
-                      </button>
+                      {task.submission ? (
+                        <button
+                          onClick={() => openSubmissionForm(task)}
+                          className="flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors bg-green-500/20 text-green-400 border border-green-500/30 hover:bg-green-500/30"
+                        >
+                          <Eye className="w-4 h-4" />
+                          View Submission
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => openSubmissionForm(task)}
+                          disabled={overdue}
+                          className={`flex-1 flex items-center justify-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                            overdue
+                              ? "bg-gray-700 text-gray-500 cursor-not-allowed border border-gray-600"
+                              : "bg-heading/20 text-heading border border-heading/30 hover:bg-heading/30"
+                          }`}
+                        >
+                          {overdue ? (
+                            <>
+                              <AlertCircle className="w-4 h-4" />
+                              Deadline Passed
+                            </>
+                          ) : (
+                            <>
+                              <Upload className="w-4 h-4" />
+                              Submit
+                            </>
+                          )}
+                        </button>
+                      )}
                     </div>
                   </motion.div>
                 );
@@ -458,12 +489,20 @@ export default function TeamTasks() {
                     <div>
                       <h2 className="text-2xl font-display text-heading mb-1">
                         {selectedTask.submission
-                          ? "Edit Submission"
+                          ? "View Submission"
                           : "Submit Task"}
                       </h2>
                       <h3 className="text-lg text-subheading">
                         {selectedTask.title}
                       </h3>
+                      {selectedTask.submission && (
+                        <p className="text-sm text-green-400 mt-1">
+                          ✓ Submitted on{" "}
+                          {new Date(
+                            selectedTask.submission.submittedAt
+                          ).toLocaleDateString()}
+                        </p>
+                      )}
                     </div>
                     <button
                       onClick={() => {
@@ -540,13 +579,18 @@ export default function TeamTasks() {
                               }
                               placeholder={field.placeholder}
                               maxLength={field.maxLength}
+                              readOnly={!!selectedTask.submission}
                               className={`w-full px-4 py-2 bg-gray-800/50 border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-heading ${
                                 validationErrors[field.label]
                                   ? "border-red-500"
                                   : "border-gray-600"
+                              } ${
+                                selectedTask.submission
+                                  ? "cursor-not-allowed opacity-75"
+                                  : ""
                               }`}
                             />
-                            {field.maxLength && (
+                            {field.maxLength && !selectedTask.submission && (
                               <p className="text-gray-500 text-xs mt-1">
                                 {
                                   ((formData[field.label] as string) || "")
@@ -568,14 +612,19 @@ export default function TeamTasks() {
                               }
                               placeholder={field.placeholder}
                               maxLength={field.maxLength}
+                              readOnly={!!selectedTask.submission}
                               rows={4}
                               className={`w-full px-4 py-2 bg-gray-800/50 border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-heading resize-vertical ${
                                 validationErrors[field.label]
                                   ? "border-red-500"
                                   : "border-gray-600"
+                              } ${
+                                selectedTask.submission
+                                  ? "cursor-not-allowed opacity-75"
+                                  : ""
                               }`}
                             />
-                            {field.maxLength && (
+                            {field.maxLength && !selectedTask.submission && (
                               <p className="text-gray-500 text-xs mt-1">
                                 {
                                   ((formData[field.label] as string) || "")
@@ -601,10 +650,15 @@ export default function TeamTasks() {
                               accept={field.acceptedFormats
                                 ?.map((format) => `.${format}`)
                                 .join(",")}
+                              disabled={!!selectedTask.submission}
                               className={`w-full px-4 py-2 bg-gray-800/50 border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-heading file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-heading/20 file:text-heading file:text-sm hover:file:bg-heading/30 ${
                                 validationErrors[field.label]
                                   ? "border-red-500"
                                   : "border-gray-600"
+                              } ${
+                                selectedTask.submission
+                                  ? "cursor-not-allowed opacity-75"
+                                  : ""
                               }`}
                             />
                             <FileUploadInfo
@@ -628,10 +682,15 @@ export default function TeamTasks() {
                               placeholder={
                                 field.placeholder || "https://example.com"
                               }
+                              readOnly={!!selectedTask.submission}
                               className={`w-full px-4 py-2 pr-10 bg-gray-800/50 border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-heading ${
                                 validationErrors[field.label]
                                   ? "border-red-500"
                                   : "border-gray-600"
+                              } ${
+                                selectedTask.submission
+                                  ? "cursor-not-allowed opacity-75"
+                                  : ""
                               }`}
                             />
                             <ExternalLink className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
@@ -647,10 +706,15 @@ export default function TeamTasks() {
                               handleFieldChange(field.label, e.target.value)
                             }
                             placeholder={field.placeholder}
+                            readOnly={!!selectedTask.submission}
                             className={`w-full px-4 py-2 bg-gray-800/50 border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-heading ${
                               validationErrors[field.label]
                                 ? "border-red-500"
                                 : "border-gray-600"
+                            } ${
+                              selectedTask.submission
+                                ? "cursor-not-allowed opacity-75"
+                                : ""
                             }`}
                           />
                         )}
@@ -663,10 +727,15 @@ export default function TeamTasks() {
                             onChange={(e) =>
                               handleFieldChange(field.label, e.target.value)
                             }
+                            readOnly={!!selectedTask.submission}
                             className={`w-full px-4 py-2 bg-gray-800/50 border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-heading ${
                               validationErrors[field.label]
                                 ? "border-red-500"
                                 : "border-gray-600"
+                            } ${
+                              selectedTask.submission
+                                ? "cursor-not-allowed opacity-75"
+                                : ""
                             }`}
                           />
                         )}
@@ -693,19 +762,25 @@ export default function TeamTasks() {
                       }}
                       className="px-6 py-2 bg-gray-800 border border-gray-600 text-white rounded-lg hover:bg-gray-700 transition-colors"
                     >
-                      Cancel
+                      Close
                     </button>
-                    <button
-                      onClick={handleSubmit}
-                      disabled={submitting}
-                      className="px-6 py-2 bg-heading/20 border border-heading/30 text-heading rounded-lg hover:bg-heading/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                    >
-                      {submitting
-                        ? "Submitting..."
-                        : selectedTask.submission
-                        ? "Update Submission"
-                        : "Submit Task"}
-                    </button>
+                    {!selectedTask.submission && (
+                      <button
+                        onClick={handleSubmit}
+                        disabled={submitting}
+                        className="px-6 py-2 bg-heading/20 border border-heading/30 text-heading rounded-lg hover:bg-heading/30 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      >
+                        {submitting ? "Submitting..." : "Submit Task"}
+                      </button>
+                    )}
+                    {selectedTask.submission && (
+                      <div className="flex items-center gap-2 text-green-400">
+                        <CheckCircle className="w-5 h-5" />
+                        <span className="text-sm font-medium">
+                          Task submitted successfully
+                        </span>
+                      </div>
+                    )}
                   </div>
                 </motion.div>
               </motion.div>

@@ -22,11 +22,13 @@ export async function POST(request: NextRequest) {
     const bytes = await file.arrayBuffer();
     const buffer = Buffer.from(bytes);
 
-    // Upload to Cloudinary
-    const result = await uploadToCloudinary(
-      `data:${file.type};base64,${buffer.toString("base64")}`,
-      folder
-    );
+    // Upload to Cloudinary - simplified to use buffer directly
+    const result = await uploadToCloudinary(buffer, {
+      folder,
+      resource_type: "auto", // Auto-detect file type
+      use_filename: true,
+      unique_filename: true,
+    });
 
     return NextResponse.json({
       success: true,

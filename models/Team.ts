@@ -145,7 +145,7 @@ const teamSchema = new Schema<ITeam>(
     },
     status: {
       type: String,
-      enum: ["registered", "selected", "rejected", "finalist"],
+      enum: ["registered", "selected", "waitlisted", "rejected", "finalist"],
       default: "registered",
     },
     tasks: [taskSubmissionSchema],

@@ -122,9 +122,12 @@ export async function POST(
           // Convert File to Buffer
           const fileBuffer = Buffer.from(await fieldValue.arrayBuffer());
 
+          // Upload with original filename preserved
           const uploadResult = await uploadToCloudinary(
             fileBuffer,
-            "task-submissions"
+            "task-submissions",
+            "auto", // Let Cloudinary auto-detect the resource type
+            fieldValue.name // Pass the original filename
           );
           submissionData[field.label] = uploadResult.secure_url;
           uploadedFiles.push(uploadResult.secure_url);

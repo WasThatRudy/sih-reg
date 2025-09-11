@@ -1,4 +1,4 @@
-import { v2 as cloudinary } from "cloudinary";
+import { v2 as cloudinary, UploadApiResponse } from "cloudinary";
 
 // Configure Cloudinary
 cloudinary.config({
@@ -20,26 +20,43 @@ export interface UploadResult {
  * @param file - File buffer or base64 string
  * @param folder - Folder to upload to in Cloudinary
  * @param resourceType - Type of resource (image, video, raw, auto)
+ * @param filename - Original filename (optional)
  * @returns Promise with upload result
  */
 export async function uploadToCloudinary(
   file: Buffer | string,
   folder: string = "sih-reg",
-  resourceType: "image" | "video" | "raw" | "auto" = "auto"
+  resourceType: "image" | "video" | "raw" | "auto" = "auto",
+  filename?: string
 ): Promise<UploadResult> {
   try {
-    let result;
+    let result: UploadApiResponse;
 
     if (Buffer.isBuffer(file)) {
-      // For Buffer, convert to base64 data URI
-      const base64Data = file.toString("base64");
-      const dataUri = `data:application/octet-stream;base64,${base64Data}`;
-
-      result = await cloudinary.uploader.upload(dataUri, {
-        folder,
-        resource_type: resourceType,
-        use_filename: true,
-        unique_filename: true,
+      // For Buffer uploads, use the stream upload method
+      result = await new Promise<UploadApiResponse>((resolve, reject) => {
+        const uploadStream = cloudinary.uploader.upload_stream(
+          {
+            folder,
+            resource_type: resourceType,
+            use_filename: filename ? true : false,
+            filename_override: filename ? filename.split('.')[0] : undefined, // Remove extension, Cloudinary will auto-detect
+            unique_filename: true,
+            overwrite: false,
+          },
+          (error, result) => {
+            if (error) {
+              reject(error);
+            } else if (result) {
+              resolve(result);
+            } else {
+              reject(new Error("Upload failed - no result"));
+            }
+          }
+        );
+        
+        // Write the buffer to the stream
+        uploadStream.end(file);
       });
     } else {
       // For string (file path), upload directly

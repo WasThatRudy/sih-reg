@@ -206,6 +206,37 @@ export default function AdminSubmissions() {
     document.body.removeChild(link);
   };
 
+  // Helper function to detect if a string is a URL
+  const isValidUrl = (string: string) => {
+    try {
+      const url = new URL(string);
+      return url.protocol === "http:" || url.protocol === "https:";
+    } catch {
+      return false;
+    }
+  };
+
+  // Helper function to render value with clickable links
+  const renderValueWithLinks = (value: string | number) => {
+    const stringValue = String(value);
+
+    if (isValidUrl(stringValue)) {
+      return (
+        <a
+          href={stringValue}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-400 hover:text-blue-300 underline inline-flex items-center gap-1"
+        >
+          {stringValue}
+          <ExternalLink className="w-3 h-3" />
+        </a>
+      );
+    }
+
+    return stringValue;
+  };
+
   const handleStatusUpdate = async (teamId: string, newStatus: string) => {
     const token = localStorage.getItem("adminToken");
 
@@ -527,7 +558,7 @@ export default function AdminSubmissions() {
                               <div key={key} className="text-sm">
                                 <span className="text-gray-400">{key}:</span>
                                 <span className="text-white ml-2">
-                                  {String(value)}
+                                  {renderValueWithLinks(value)}
                                 </span>
                               </div>
                             )

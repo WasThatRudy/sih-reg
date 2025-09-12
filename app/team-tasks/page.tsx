@@ -127,6 +127,71 @@ export default function TeamTasks() {
     return new Date() > new Date(task.dueDate) && !task.submission;
   };
 
+  // Helper function to detect if a string is a URL
+  const isValidUrl = (string: string) => {
+    try {
+      const url = new URL(string);
+      return url.protocol === "http:" || url.protocol === "https:";
+    } catch {
+      return false;
+    }
+  };
+
+  // Helper function to render text with clickable links
+  const renderTextWithLinks = (text: string) => {
+    // Split text by spaces to find potential URLs
+    const words = text.split(" ");
+    const result = [];
+
+    for (let i = 0; i < words.length; i++) {
+      const word = words[i];
+      if (isValidUrl(word)) {
+        result.push(
+          <a
+            key={i}
+            href={word}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="text-blue-400 hover:text-blue-300 underline inline-flex items-center gap-1"
+          >
+            {word}
+            <ExternalLink className="w-3 h-3" />
+          </a>
+        );
+      } else {
+        result.push(word);
+      }
+
+      // Add space between words (except for the last word)
+      if (i < words.length - 1) {
+        result.push(" ");
+      }
+    }
+
+    return result;
+  };
+
+  // Helper function to render value with clickable links
+  const renderValueWithLinks = (value: string | number) => {
+    const stringValue = String(value);
+
+    if (isValidUrl(stringValue)) {
+      return (
+        <a
+          href={stringValue}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="text-blue-400 hover:text-blue-300 underline inline-flex items-center gap-1"
+        >
+          {stringValue}
+          <ExternalLink className="w-3 h-3" />
+        </a>
+      );
+    }
+
+    return stringValue;
+  };
+
   const handleFieldChange = (fieldLabel: string, value: string | File) => {
     setFormData((prev) => ({ ...prev, [fieldLabel]: value }));
     // Clear validation error when user starts typing/selecting
@@ -333,7 +398,7 @@ export default function TeamTasks() {
                     {/* Task Description */}
                     {task.description && (
                       <p className="text-gray-400 text-sm mb-4 line-clamp-3">
-                        {task.description}
+                        {renderTextWithLinks(task.description)}
                       </p>
                     )}
 
@@ -536,7 +601,7 @@ export default function TeamTasks() {
                         Task Description
                       </h4>
                       <p className="text-gray-300 text-sm">
-                        {selectedTask.description}
+                        {renderTextWithLinks(selectedTask.description)}
                       </p>
                     </div>
                   )}
@@ -564,40 +629,68 @@ export default function TeamTasks() {
 
                         {field.description && (
                           <p className="text-gray-400 text-xs">
-                            {field.description}
+                            {renderTextWithLinks(field.description)}
                           </p>
                         )}
 
                         {/* Text Input */}
                         {field.type === "text" && (
                           <div>
-                            <input
-                              type="text"
-                              value={(formData[field.label] as string) || ""}
-                              onChange={(e) =>
-                                handleFieldChange(field.label, e.target.value)
-                              }
-                              placeholder={field.placeholder}
-                              maxLength={field.maxLength}
-                              readOnly={!!selectedTask.submission}
-                              className={`w-full px-4 py-2 bg-gray-800/50 border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-heading ${
-                                validationErrors[field.label]
-                                  ? "border-red-500"
-                                  : "border-gray-600"
-                              } ${
-                                selectedTask.submission
-                                  ? "cursor-not-allowed opacity-75"
-                                  : ""
-                              }`}
-                            />
-                            {field.maxLength && !selectedTask.submission && (
-                              <p className="text-gray-500 text-xs mt-1">
-                                {
-                                  ((formData[field.label] as string) || "")
-                                    .length
-                                }
-                                /{field.maxLength} characters
-                              </p>
+                            {selectedTask.submission &&
+                            formData[field.label] &&
+                            isValidUrl(formData[field.label] as string) ? (
+                              // Show as clickable link when viewing submission and content is a URL
+                              <div className="p-3 bg-gray-800/50 border border-gray-600 rounded-lg">
+                                <a
+                                  href={formData[field.label] as string}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-400 hover:text-blue-300 underline inline-flex items-center gap-2 break-all"
+                                >
+                                  {formData[field.label] as string}
+                                  <ExternalLink className="w-4 h-4 flex-shrink-0" />
+                                </a>
+                              </div>
+                            ) : (
+                              // Show as regular input
+                              <>
+                                <input
+                                  type="text"
+                                  value={
+                                    (formData[field.label] as string) || ""
+                                  }
+                                  onChange={(e) =>
+                                    handleFieldChange(
+                                      field.label,
+                                      e.target.value
+                                    )
+                                  }
+                                  placeholder={field.placeholder}
+                                  maxLength={field.maxLength}
+                                  readOnly={!!selectedTask.submission}
+                                  className={`w-full px-4 py-2 bg-gray-800/50 border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-heading ${
+                                    validationErrors[field.label]
+                                      ? "border-red-500"
+                                      : "border-gray-600"
+                                  } ${
+                                    selectedTask.submission
+                                      ? "cursor-not-allowed opacity-75"
+                                      : ""
+                                  }`}
+                                />
+                                {field.maxLength &&
+                                  !selectedTask.submission && (
+                                    <p className="text-gray-500 text-xs mt-1">
+                                      {
+                                        (
+                                          (formData[field.label] as string) ||
+                                          ""
+                                        ).length
+                                      }
+                                      /{field.maxLength} characters
+                                    </p>
+                                  )}
+                              </>
                             )}
                           </div>
                         )}
@@ -672,28 +765,52 @@ export default function TeamTasks() {
 
                         {/* URL Input */}
                         {field.type === "url" && (
-                          <div className="relative">
-                            <input
-                              type="url"
-                              value={(formData[field.label] as string) || ""}
-                              onChange={(e) =>
-                                handleFieldChange(field.label, e.target.value)
-                              }
-                              placeholder={
-                                field.placeholder || "https://example.com"
-                              }
-                              readOnly={!!selectedTask.submission}
-                              className={`w-full px-4 py-2 pr-10 bg-gray-800/50 border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-heading ${
-                                validationErrors[field.label]
-                                  ? "border-red-500"
-                                  : "border-gray-600"
-                              } ${
-                                selectedTask.submission
-                                  ? "cursor-not-allowed opacity-75"
-                                  : ""
-                              }`}
-                            />
-                            <ExternalLink className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                          <div>
+                            {selectedTask.submission &&
+                            formData[field.label] ? (
+                              // Show as clickable link when viewing submission
+                              <div className="p-3 bg-gray-800/50 border border-gray-600 rounded-lg">
+                                <a
+                                  href={formData[field.label] as string}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="text-blue-400 hover:text-blue-300 underline inline-flex items-center gap-2"
+                                >
+                                  {formData[field.label] as string}
+                                  <ExternalLink className="w-4 h-4" />
+                                </a>
+                              </div>
+                            ) : (
+                              // Show as input when submitting
+                              <div className="relative">
+                                <input
+                                  type="url"
+                                  value={
+                                    (formData[field.label] as string) || ""
+                                  }
+                                  onChange={(e) =>
+                                    handleFieldChange(
+                                      field.label,
+                                      e.target.value
+                                    )
+                                  }
+                                  placeholder={
+                                    field.placeholder || "https://example.com"
+                                  }
+                                  readOnly={!!selectedTask.submission}
+                                  className={`w-full px-4 py-2 pr-10 bg-gray-800/50 border rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-heading ${
+                                    validationErrors[field.label]
+                                      ? "border-red-500"
+                                      : "border-gray-600"
+                                  } ${
+                                    selectedTask.submission
+                                      ? "cursor-not-allowed opacity-75"
+                                      : ""
+                                  }`}
+                                />
+                                <ExternalLink className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                              </div>
+                            )}
                           </div>
                         )}
 
@@ -750,6 +867,89 @@ export default function TeamTasks() {
                       </div>
                     ))}
                   </div>
+
+                  {/* Submitted Data & Files (only show when viewing submission) */}
+                  {selectedTask.submission && (
+                    <div className="mt-6 space-y-4">
+                      {/* Submitted Form Data */}
+                      {selectedTask.submission.data &&
+                        Object.keys(selectedTask.submission.data).length >
+                          0 && (
+                          <div className="p-4 bg-gray-800/30 rounded-lg">
+                            <h4 className="text-sm font-medium text-subheading mb-3">
+                              Submitted Responses:
+                            </h4>
+                            <div className="space-y-2">
+                              {Object.entries(selectedTask.submission.data).map(
+                                ([key, value]) => (
+                                  <div key={key} className="text-sm">
+                                    <span className="text-gray-400">
+                                      {key}:
+                                    </span>
+                                    <span className="text-white ml-2">
+                                      {renderValueWithLinks(value)}
+                                    </span>
+                                  </div>
+                                )
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                      {/* Submitted Files */}
+                      {selectedTask.submission.files &&
+                        selectedTask.submission.files.length > 0 && (
+                          <div className="p-4 bg-gray-800/30 rounded-lg">
+                            <h4 className="text-sm font-medium text-subheading mb-3">
+                              Submitted Files:
+                            </h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                              {selectedTask.submission.files.map(
+                                (fileUrl, index) => {
+                                  const filename =
+                                    fileUrl.split("/").pop() ||
+                                    `file-${index + 1}`;
+                                  return (
+                                    <div
+                                      key={index}
+                                      className="flex items-center justify-between p-3 bg-gray-800/50 rounded-lg border border-gray-700"
+                                    >
+                                      <div className="flex items-center gap-2 flex-1 min-w-0">
+                                        <FileText className="w-4 h-4 text-blue-400 flex-shrink-0" />
+                                        <span className="text-sm text-gray-300 truncate">
+                                          {filename}
+                                        </span>
+                                      </div>
+                                      <a
+                                        href={fileUrl}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="p-1 text-blue-400 hover:text-blue-300 transition-colors"
+                                        title="View File"
+                                      >
+                                        <ExternalLink className="w-4 h-4" />
+                                      </a>
+                                    </div>
+                                  );
+                                }
+                              )}
+                            </div>
+                          </div>
+                        )}
+
+                      {/* Submission Feedback */}
+                      {selectedTask.submission.feedback && (
+                        <div className="p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg">
+                          <h4 className="text-sm font-medium text-yellow-400 mb-2">
+                            Admin Feedback:
+                          </h4>
+                          <p className="text-sm text-gray-300">
+                            {selectedTask.submission.feedback}
+                          </p>
+                        </div>
+                      )}
+                    </div>
+                  )}
 
                   {/* Form Actions */}
                   <div className="flex gap-3 pt-6 border-t border-gray-700 mt-6">

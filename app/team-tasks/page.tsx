@@ -425,13 +425,7 @@ export default function TeamTasks() {
                           </span>
                         </div>
                         {!overdue ? (
-                          <CountdownTimer
-                            dueDate={task.dueDate}
-                            onExpire={() => {
-                              // Refresh tasks when deadline passes
-                              fetchTasks();
-                            }}
-                          />
+                          <CountdownTimer dueDate={task.dueDate} />
                         ) : (
                           <div className="flex items-center gap-2 text-red-400">
                             <AlertCircle className="w-4 h-4" />

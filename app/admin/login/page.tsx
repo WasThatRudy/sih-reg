@@ -1,17 +1,18 @@
-'use client';
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { useRouter } from 'next/navigation';
-import Navbar from '@/components/Navbar';
-import ValidatedInput from '@/components/ui/ValidatedInput';
-import { useAdminAuth } from '@/lib/context/AdminAuthContext';
+"use client";
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
+import Link from "next/link";
+import Navbar from "@/components/Navbar";
+import ValidatedInput from "@/components/ui/ValidatedInput";
+import { useAdminAuth } from "@/lib/context/AdminAuthContext";
 
 export default function AdminLogin() {
   const { signIn, loading: authLoading } = useAdminAuth();
   const router = useRouter();
   const [formData, setFormData] = useState({
-    email: '',
-    password: '',
+    email: "",
+    password: "",
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [submitLoading, setSubmitLoading] = useState(false);
@@ -20,7 +21,7 @@ export default function AdminLogin() {
     setFormData((prev) => ({ ...prev, [field]: value }));
     // Clear error when user starts typing
     if (errors[field]) {
-      setErrors((prev) => ({ ...prev, [field]: '' }));
+      setErrors((prev) => ({ ...prev, [field]: "" }));
     }
   };
 
@@ -28,15 +29,15 @@ export default function AdminLogin() {
     const newErrors: { [key: string]: string } = {};
 
     if (!formData.email) {
-      newErrors.email = 'Email is required';
+      newErrors.email = "Email is required";
     } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      newErrors.email = 'Please enter a valid email address';
+      newErrors.email = "Please enter a valid email address";
     }
 
     if (!formData.password) {
-      newErrors.password = 'Password is required';
+      newErrors.password = "Password is required";
     } else if (formData.password.length < 8) {
-      newErrors.password = 'Password must be at least 8 characters long';
+      newErrors.password = "Password must be at least 8 characters long";
     }
 
     setErrors(newErrors);
@@ -51,14 +52,14 @@ export default function AdminLogin() {
     setSubmitLoading(true);
     try {
       await signIn(formData.email, formData.password);
-      router.push('/admin');
+      router.push("/admin");
     } catch (error: unknown) {
-      console.error('Admin login error:', error);
-      
-      const errorMessage = (error as Error).message || 'Login failed';
-      
-      if (errorMessage.includes('email') || errorMessage.includes('password')) {
-        setErrors({ password: 'Invalid email or password' });
+      console.error("Admin login error:", error);
+
+      const errorMessage = (error as Error).message || "Login failed";
+
+      if (errorMessage.includes("email") || errorMessage.includes("password")) {
+        setErrors({ password: "Invalid email or password" });
       } else {
         setErrors({ password: errorMessage });
       }
@@ -72,7 +73,7 @@ export default function AdminLogin() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       {/* Hero Section */}
       <section className="pt-24 pb-12 px-6">
         <div className="max-w-md mx-auto">
@@ -103,7 +104,7 @@ export default function AdminLogin() {
                 label="Admin Email"
                 type="email"
                 value={formData.email}
-                onChange={(value) => handleInputChange('email', value)}
+                onChange={(value) => handleInputChange("email", value)}
                 placeholder="Enter your admin email"
                 required
                 validationType="email"
@@ -118,17 +119,21 @@ export default function AdminLogin() {
                 <input
                   type="password"
                   value={formData.password}
-                  onChange={(e) => handleInputChange('password', e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("password", e.target.value)
+                  }
                   className={`w-full px-4 py-3 bg-gray-800/50 border rounded-lg text-white placeholder-gray-400 focus:outline-none transition-colors duration-300 font-body ${
                     errors.password
-                      ? 'border-red-500 focus:border-red-400'
-                      : 'border-gray-700 focus:border-heading'
+                      ? "border-red-500 focus:border-red-400"
+                      : "border-gray-700 focus:border-heading"
                   }`}
                   placeholder="Enter your password"
                   required
                 />
                 {errors.password && (
-                  <p className="mt-2 text-sm text-red-400 font-body">{errors.password}</p>
+                  <p className="mt-2 text-sm text-red-400 font-body">
+                    {errors.password}
+                  </p>
                 )}
               </div>
 
@@ -138,8 +143,8 @@ export default function AdminLogin() {
                 disabled={isLoading}
                 className={`w-full py-4 rounded-lg text-white font-medium tracking-wide font-body transition-all duration-300 ${
                   isLoading
-                    ? 'bg-gray-600 cursor-not-allowed'
-                    : 'bg-heading hover:bg-heading/90 hover:shadow-lg hover:shadow-heading/20'
+                    ? "bg-gray-600 cursor-not-allowed"
+                    : "bg-heading hover:bg-heading/90 hover:shadow-lg hover:shadow-heading/20"
                 }`}
                 whileHover={!isLoading ? { scale: 1.02 } : {}}
                 whileTap={!isLoading ? { scale: 0.98 } : {}}
@@ -150,14 +155,20 @@ export default function AdminLogin() {
                     Signing in...
                   </div>
                 ) : (
-                  'Sign In to Admin Panel'
+                  "Sign In to Admin Panel"
                 )}
               </motion.button>
 
               {/* Admin Info */}
               <div className="text-center">
                 <p className="text-gray-400 font-body">
-                  Secure admin access with hardcoded credentials
+                  Need an admin account?{" "}
+                  <Link
+                    href="/admin/register"
+                    className="text-heading hover:text-heading/80 transition-colors duration-200"
+                  >
+                    Register here
+                  </Link>
                 </p>
               </div>
             </form>

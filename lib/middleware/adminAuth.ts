@@ -1,7 +1,11 @@
 import { NextRequest } from "next/server";
+import jwt from "jsonwebtoken";
+import dbConnect from "@/lib/mongodb";
+import { Admin } from "@/models/Admin";
 
 export interface AdminAuthenticatedRequest extends NextRequest {
   admin?: {
+    _id: string;
     email: string;
     isAuthenticated: boolean;
   };
@@ -17,32 +21,42 @@ export async function verifyAdminAuth(
       throw new Error("No admin credentials provided");
     }
 
-    // Extract Bearer token (which is base64 encoded email:password)
-    const base64Credentials = authHeader.split(" ")[1];
-    const credentials = Buffer.from(base64Credentials, "base64").toString(
-      "ascii"
-    );
-    const [email, password] = credentials.split(":");
+    // Extract Bearer token (JWT)
+    const token = authHeader.split(" ")[1];
 
-    // Get admin credentials from environment
-    const adminEmail = process.env.ADMIN_EMAIL;
-    const adminPassword = process.env.ADMIN_PASSWORD;
-
-    if (!adminEmail || !adminPassword) {
-      throw new Error("Admin credentials not configured");
+    // Get JWT secret from environment
+    const jwtSecret = process.env.JWT_SECRET;
+    if (!jwtSecret) {
+      throw new Error("JWT secret not configured");
     }
 
-    // Verify credentials
-    if (email === adminEmail && password === adminPassword) {
-      const authenticatedRequest = request as AdminAuthenticatedRequest;
-      authenticatedRequest.admin = {
-        email: adminEmail,
-        isAuthenticated: true,
-      };
-      return authenticatedRequest;
-    } else {
-      throw new Error("Invalid admin credentials");
+    // Verify JWT token
+    const decoded = jwt.verify(token, jwtSecret) as {
+      adminId: string;
+      email: string;
+      isAdmin: boolean;
+    };
+
+    if (!decoded.isAdmin) {
+      throw new Error("Invalid admin token");
     }
+
+    // Connect to database and verify admin still exists
+    await dbConnect();
+    const admin = await Admin.findById(decoded.adminId);
+
+    if (!admin) {
+      throw new Error("Admin not found");
+    }
+
+    const authenticatedRequest = request as AdminAuthenticatedRequest;
+    authenticatedRequest.admin = {
+      _id: admin._id.toString(),
+      email: admin.email,
+      isAuthenticated: true,
+    };
+
+    return authenticatedRequest;
   } catch (error) {
     console.error("Admin auth verification error:", error);
     throw new Error("Admin authentication failed");

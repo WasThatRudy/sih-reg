@@ -1,9 +1,16 @@
-'use client';
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+"use client";
+import {
+  createContext,
+  useContext,
+  useState,
+  useEffect,
+  ReactNode,
+} from "react";
 
 interface AdminUser {
   _id: string;
   email: string;
+  createdAt?: Date;
 }
 
 interface AdminAuthContextType {
@@ -14,12 +21,14 @@ interface AdminAuthContextType {
   isAuthenticated: boolean;
 }
 
-const AdminAuthContext = createContext<AdminAuthContextType | undefined>(undefined);
+const AdminAuthContext = createContext<AdminAuthContextType | undefined>(
+  undefined
+);
 
 export const useAdminAuth = () => {
   const context = useContext(AdminAuthContext);
   if (context === undefined) {
-    throw new Error('useAdminAuth must be used within an AdminAuthProvider');
+    throw new Error("useAdminAuth must be used within an AdminAuthProvider");
   }
   return context;
 };
@@ -28,7 +37,9 @@ interface AdminAuthProviderProps {
   children: ReactNode;
 }
 
-export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }) => {
+export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({
+  children,
+}) => {
   const [admin, setAdmin] = useState<AdminUser | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -39,15 +50,15 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
 
   const checkAuthStatus = async () => {
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem("adminToken");
       if (!token) {
         setLoading(false);
         return;
       }
 
-      const response = await fetch('/api/admin/verify', {
+      const response = await fetch("/api/admin/verify", {
         headers: {
-          'Authorization': `Bearer ${token}`,
+          Authorization: `Bearer ${token}`,
         },
       });
 
@@ -55,11 +66,11 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
         const data = await response.json();
         setAdmin(data.admin);
       } else {
-        localStorage.removeItem('adminToken');
+        localStorage.removeItem("adminToken");
       }
     } catch (error) {
-      console.error('Auth check failed:', error);
-      localStorage.removeItem('adminToken');
+      console.error("Auth check failed:", error);
+      localStorage.removeItem("adminToken");
     } finally {
       setLoading(false);
     }
@@ -68,10 +79,10 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
   const signIn = async (email: string, password: string) => {
     setLoading(true);
     try {
-      const response = await fetch('/api/admin/login', {
-        method: 'POST',
+      const response = await fetch("/api/admin/login", {
+        method: "POST",
         headers: {
-          'Content-Type': 'application/json',
+          "Content-Type": "application/json",
         },
         body: JSON.stringify({
           email,
@@ -82,11 +93,11 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
       const data = await response.json();
 
       if (!response.ok) {
-        throw new Error(data.error || 'Login failed');
+        throw new Error(data.error || "Login failed");
       }
 
       // Store token in localStorage
-      localStorage.setItem('adminToken', data.token);
+      localStorage.setItem("adminToken", data.token);
       setAdmin(data.admin);
     } catch (error) {
       setLoading(false);
@@ -99,19 +110,19 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({ children }
   const signOut = async () => {
     setLoading(true);
     try {
-      const token = localStorage.getItem('adminToken');
+      const token = localStorage.getItem("adminToken");
       if (token) {
-        await fetch('/api/admin/logout', {
-          method: 'POST',
+        await fetch("/api/admin/logout", {
+          method: "POST",
           headers: {
-            'Authorization': `Bearer ${token}`,
+            Authorization: `Bearer ${token}`,
           },
         });
       }
     } catch (error) {
-      console.error('Logout error:', error);
+      console.error("Logout error:", error);
     } finally {
-      localStorage.removeItem('adminToken');
+      localStorage.removeItem("adminToken");
       setAdmin(null);
       setLoading(false);
     }

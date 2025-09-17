@@ -1,4 +1,4 @@
-SIH Registration Portal website
+# SIH Registration Portal website
 
 A comprehensive backend system for the Smart India Hackathon (SIH) registration portal built with Next.js API Routes, MongoDB, Firebase Authentication, and Cloudinary for file storage.
 

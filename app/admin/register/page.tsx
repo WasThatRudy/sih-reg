@@ -167,7 +167,7 @@ export default function AdminRegister() {
               Admin Registration
             </h1>
             <p className="text-gray-400 text-lg font-body">
-              Register as a new administrator
+              Role determined automatically by secret key
             </p>
           </motion.div>
 
@@ -268,7 +268,8 @@ export default function AdminRegister() {
                   </p>
                 )}
                 <p className="mt-2 text-xs text-gray-500 font-body">
-                  Contact your system administrator for the secret key
+                  Your role (Evaluator/Super Admin) will be determined
+                  automatically by the secret key
                 </p>
               </div>
 

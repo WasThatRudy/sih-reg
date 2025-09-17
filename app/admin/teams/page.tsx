@@ -2,6 +2,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import AdminLayout from "@/components/admin/AdminLayout";
+import { useAdminAuth } from "@/lib/context/AdminAuthContext";
+import { AlertCircle } from "lucide-react";
 
 interface TeamMember {
   name: string;
@@ -64,6 +66,7 @@ interface DetailedTeam {
 }
 
 export default function TeamsManagement() {
+  const { isSuperAdmin } = useAdminAuth();
   const [teams, setTeams] = useState<Team[]>([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState<string>("all");
@@ -223,6 +226,21 @@ export default function TeamsManagement() {
     const matchesFilter = filter === "all" || team.status === filter;
     return matchesFilter;
   });
+
+  // Redirect evaluators
+  if (!isSuperAdmin) {
+    return (
+      <AdminLayout>
+        <div className="text-center py-12">
+          <AlertCircle className="w-16 h-16 text-red-400 mx-auto mb-4" />
+          <h2 className="text-2xl font-display text-heading mb-2">
+            Access Denied
+          </h2>
+          <p className="text-gray-400">Only super admins can manage teams.</p>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>

@@ -1,4 +1,4 @@
-import mongoose, { Document, Schema, Model } from "mongoose";
+import mongoose, { Document, Schema, Model, Types } from "mongoose";
 import bcrypt from "bcrypt";
 
 // Admin Interface
@@ -6,6 +6,9 @@ export interface IAdmin extends Document {
   _id: string;
   email: string;
   passwordHash: string;
+  role: "super-admin" | "evaluator";
+  assignedProblemStatements: Types.ObjectId[]; // Only for evaluators
+  isActive: boolean;
   createdAt: Date;
   updatedAt: Date;
 }
@@ -15,7 +18,7 @@ export interface IAdminMethods {
   comparePassword(password: string): Promise<boolean>;
 }
 
-export interface IAdminModel extends Model<IAdmin, {}, IAdminMethods> {}
+export type IAdminModel = Model<IAdmin, object, IAdminMethods>;
 
 // Admin Schema
 const adminSchema = new Schema<IAdmin, IAdminModel, IAdminMethods>(
@@ -31,6 +34,21 @@ const adminSchema = new Schema<IAdmin, IAdminModel, IAdminMethods>(
       type: String,
       required: true,
     },
+    role: {
+      type: String,
+      enum: ["super-admin", "evaluator"],
+      default: "evaluator",
+    },
+    assignedProblemStatements: [
+      {
+        type: Schema.Types.ObjectId,
+        ref: "ProblemStatement",
+      },
+    ],
+    isActive: {
+      type: Boolean,
+      default: true,
+    },
   },
   {
     timestamps: true,
@@ -38,7 +56,9 @@ const adminSchema = new Schema<IAdmin, IAdminModel, IAdminMethods>(
 );
 
 // Add method to compare passwords
-adminSchema.methods.comparePassword = async function(password: string): Promise<boolean> {
+adminSchema.methods.comparePassword = async function (
+  password: string
+): Promise<boolean> {
   if (!this.passwordHash) {
     return false;
   }
@@ -46,4 +66,5 @@ adminSchema.methods.comparePassword = async function(password: string): Promise<
 };
 
 export const Admin: IAdminModel =
-  mongoose.models.Admin || mongoose.model<IAdmin, IAdminModel>("Admin", adminSchema);
+  mongoose.models.Admin ||
+  mongoose.model<IAdmin, IAdminModel>("Admin", adminSchema);

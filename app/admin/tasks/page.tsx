@@ -2,6 +2,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import AdminLayout from "@/components/admin/AdminLayout";
+import { useAdminAuth } from "@/lib/context/AdminAuthContext";
+import { AlertCircle } from "lucide-react";
 
 interface Task {
   _id: string;
@@ -35,6 +37,7 @@ interface Team {
 }
 
 export default function TasksManagement() {
+  const { isSuperAdmin } = useAdminAuth();
   // Remove unused admin variable
   const [tasks, setTasks] = useState<Task[]>([]);
   const [allTeams, setAllTeams] = useState<Team[]>([]);
@@ -59,6 +62,7 @@ export default function TasksManagement() {
     fields: [] as TaskField[],
     assignedTo: [] as string[],
     dueDate: "",
+    dueTime: "",
   });
 
   useEffect(() => {
@@ -97,6 +101,7 @@ export default function TasksManagement() {
     }));
   }, [selectedTeamIds]);
 
+  // Function definitions
   const fetchTasks = async () => {
     const token = localStorage.getItem("adminToken");
     if (!token) {
@@ -185,6 +190,7 @@ export default function TasksManagement() {
       fields: [],
       assignedTo: [],
       dueDate: "",
+      dueTime: "",
     });
     setSelectedTeamIds(new Set());
     setTeamSearchQuery("");
@@ -230,13 +236,31 @@ export default function TasksManagement() {
 
     setSubmitting(true);
     try {
+      // Combine date and time if both are provided
+      let combinedDateTime = "";
+      if (newTask.dueDate) {
+        if (newTask.dueTime) {
+          combinedDateTime = `${newTask.dueDate}T${newTask.dueTime}:00`;
+        } else {
+          combinedDateTime = `${newTask.dueDate}T23:59:59`;
+        }
+      }
+
+      const taskData = {
+        title: newTask.title,
+        description: newTask.description,
+        fields: newTask.fields,
+        assignedTo: newTask.assignedTo,
+        dueDate: combinedDateTime || undefined,
+      };
+
       const response = await fetch("/api/admin/tasks", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
           Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(newTask),
+        body: JSON.stringify(taskData),
       });
 
       if (response.ok) {
@@ -248,6 +272,7 @@ export default function TasksManagement() {
           fields: [],
           assignedTo: [],
           dueDate: "",
+          dueTime: "",
         });
         setSelectedTeamIds(new Set()); // Clear team selection
         alert("Task created and assigned successfully!");
@@ -290,6 +315,25 @@ export default function TasksManagement() {
       console.error("Error updating task status:", error);
     }
   };
+
+  // If not a super admin, show access denied
+  if (!isSuperAdmin) {
+    return (
+      <AdminLayout>
+        <div className="flex items-center justify-center min-h-[60vh]">
+          <div className="text-center">
+            <AlertCircle className="mx-auto h-12 w-12 text-red-500 mb-4" />
+            <h2 className="text-xl font-semibold text-gray-900 mb-2">
+              Access Denied
+            </h2>
+            <p className="text-gray-600">
+              You don&apos;t have permission to access this page.
+            </p>
+          </div>
+        </div>
+      </AdminLayout>
+    );
+  }
 
   return (
     <AdminLayout>
@@ -365,7 +409,14 @@ export default function TasksManagement() {
                       </span>
                       {task.dueDate && (
                         <span>
-                          Due: {new Date(task.dueDate).toLocaleDateString()}
+                          Due:{" "}
+                          {new Date(task.dueDate).toLocaleString("en-IN", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
                         </span>
                       )}
                       <span>
@@ -560,19 +611,56 @@ export default function TasksManagement() {
                     </div>
                     <div>
                       <label className="block text-subheading text-sm font-medium mb-2">
-                        Due Date
+                        Due Date & Time
                       </label>
-                      <input
-                        type="date"
-                        value={newTask.dueDate}
-                        onChange={(e) =>
-                          setNewTask((prev) => ({
-                            ...prev,
-                            dueDate: e.target.value,
-                          }))
-                        }
-                        className="w-full px-4 py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-heading"
-                      />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-gray-300 text-xs mb-1">
+                            Date
+                          </label>
+                          <input
+                            type="date"
+                            value={newTask.dueDate}
+                            onChange={(e) =>
+                              setNewTask((prev) => ({
+                                ...prev,
+                                dueDate: e.target.value,
+                                // Clear time if date is cleared
+                                dueTime: e.target.value ? prev.dueTime : "",
+                              }))
+                            }
+                            className="w-full px-4 py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-heading"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-gray-300 text-xs mb-1">
+                            Time
+                          </label>
+                          <input
+                            type="time"
+                            value={newTask.dueTime}
+                            onChange={(e) =>
+                              setNewTask((prev) => ({
+                                ...prev,
+                                dueTime: e.target.value,
+                              }))
+                            }
+                            disabled={!newTask.dueDate}
+                            className="w-full px-4 py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-heading disabled:opacity-50 disabled:cursor-not-allowed"
+                            placeholder="Optional"
+                          />
+                          {!newTask.dueDate && (
+                            <p className="text-gray-500 text-xs mt-1">
+                              Select a date first to enable time
+                            </p>
+                          )}
+                          {newTask.dueDate && !newTask.dueTime && (
+                            <p className="text-gray-400 text-xs mt-1">
+                              Will default to 11:59 PM if not specified
+                            </p>
+                          )}
+                        </div>
+                      </div>
                     </div>
                   </div>
 

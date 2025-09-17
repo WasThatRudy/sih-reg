@@ -1,4 +1,4 @@
- SIH Registration Portal website
+SIH Registration Portal website
 
 A comprehensive backend system for the Smart India Hackathon (SIH) registration portal built with Next.js API Routes, MongoDB, Firebase Authentication, and Cloudinary for file storage.
 
@@ -70,8 +70,9 @@ MONGODB_URI=mongodb://localhost:27017/sih-reg
 # JWT Secret
 JWT_SECRET=your-super-secret-jwt-key
 
-# Admin Secret Key
-ADMIN_SECRET_KEY=sih-admin-2025-secret
+# Admin Registration Secret Keys (Role-Based)
+EVALUATOR_REGISTRATION_SECRET=your-evaluator-secret-key
+SUPER_ADMIN_REGISTRATION_SECRET=your-super-admin-secret-key
 
 # Cloudinary Configuration
 CLOUDINARY_CLOUD_NAME=your-cloud-name
@@ -151,12 +152,14 @@ interface ITask {
 3. Backend creates/updates User record with role 'leader'
 4. JWT token issued for API access
 
-### Admin (Email/Password + Secret Key)
+### Admin (Email/Password + Role-Based Secret Key)
 
 1. Admin provides email, password, and secret key
-2. Backend validates secret key against environment variable
+2. Backend validates secret key and determines role:
+   - `EVALUATOR_REGISTRATION_SECRET` → creates evaluator account
+   - `SUPER_ADMIN_REGISTRATION_SECRET` → creates super-admin account
 3. Firebase user created with email/password
-4. User record created with role 'admin'
+4. User record created with appropriate role
 5. Custom token generated for immediate login
 
 ## 📝 API Endpoints
@@ -316,10 +319,15 @@ Ensure all production environment variables are properly configured:
 ### API Testing
 
 ```bash
-# Test authentication
-curl -X POST http://localhost:3000/api/auth/admin-register \
+# Test admin registration (evaluator)
+curl -X POST http://localhost:3000/api/admin/register \
   -H "Content-Type: application/json" \
-  -d '{"name":"Admin","email":"admin@test.com","password":"password","adminSecretKey":"your-secret"}'
+  -d '{"name":"Evaluator","email":"evaluator@test.com","password":"password","secretKey":"your-evaluator-secret"}'
+
+# Test admin registration (super-admin)
+curl -X POST http://localhost:3000/api/admin/register \
+  -H "Content-Type: application/json" \
+  -d '{"name":"Super Admin","email":"admin@test.com","password":"password","secretKey":"your-super-admin-secret"}'
 
 # Test problem statements
 curl http://localhost:3000/api/problem-statements

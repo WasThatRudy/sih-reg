@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import AdminLayout from "@/components/admin/AdminLayout";
+import { useAdminAuth } from "@/lib/context/AdminAuthContext";
 import { getProperDeliveryUrl } from "@/lib/utils/cloudinary-client";
 import {
   Search,
@@ -54,12 +55,16 @@ interface ProblemStatement {
 }
 
 export default function AdminSubmissions() {
+  const { admin, isEvaluator } = useAdminAuth();
   const [tasks, setTasks] = useState<Task[]>([]);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [submissions, setSubmissions] = useState<Submission[]>([]);
   const [problemStatements, setProblemStatements] = useState<
     ProblemStatement[]
   >([]);
+  const [evaluatorAssignments, setEvaluatorAssignments] = useState<string[]>(
+    []
+  );
   const [loading, setLoading] = useState(true);
   const [submissionsLoading, setSubmissionsLoading] = useState(false);
 
@@ -125,13 +130,40 @@ export default function AdminSubmissions() {
     }
   }, []);
 
+  // Fetch evaluator assignments for filtering submissions
+  const fetchEvaluatorAssignments = useCallback(async () => {
+    if (!isEvaluator || !admin?._id) return;
+
+    const token = localStorage.getItem("adminToken");
+    try {
+      const response = await fetch(
+        `/api/admin/evaluators/${admin._id}/assignments`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (response.ok) {
+        const data = await response.json();
+        setEvaluatorAssignments(
+          data.assignments?.map(
+            (a: { problemStatement: string }) => a.problemStatement
+          ) || []
+        );
+      }
+    } catch (error) {
+      console.error("Error fetching evaluator assignments:", error);
+    }
+  }, [isEvaluator, admin?._id]);
+
   useEffect(() => {
     const initializeData = async () => {
       await fetchTasks();
       await fetchProblemStatements();
+      await fetchEvaluatorAssignments();
     };
     initializeData();
-  }, [fetchTasks]);
+  }, [fetchTasks, fetchEvaluatorAssignments]);
 
   const fetchProblemStatements = async () => {
     const token = localStorage.getItem("adminToken");
@@ -148,6 +180,7 @@ export default function AdminSubmissions() {
     }
   };
 
+  // Fetch evaluator assignments for filtering submissions
   const fetchTaskSubmissions = async (taskId: string) => {
     setSubmissionsLoading(true);
     const token = localStorage.getItem("adminToken");
@@ -286,8 +319,23 @@ export default function AdminSubmissions() {
       problemStatementFilter === "all" ||
       submission.team.problemStatement._id === problemStatementFilter;
 
-    return matchesSearch && matchesStatus && matchesProblemStatement;
+    // For evaluators, only show submissions for their assigned problem statements
+    const matchesEvaluatorAssignment =
+      !isEvaluator ||
+      evaluatorAssignments.includes(submission.team.problemStatement._id);
+
+    return (
+      matchesSearch &&
+      matchesStatus &&
+      matchesProblemStatement &&
+      matchesEvaluatorAssignment
+    );
   });
+
+  // Filter problem statements for evaluators to show only their assigned ones
+  const availableProblemStatements = isEvaluator
+    ? problemStatements.filter((ps) => evaluatorAssignments.includes(ps._id))
+    : problemStatements;
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -442,7 +490,7 @@ export default function AdminSubmissions() {
                   className="px-4 py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-heading"
                 >
                   <option value="all">All Problem Statements</option>
-                  {problemStatements.map((ps) => (
+                  {availableProblemStatements.map((ps) => (
                     <option key={ps._id} value={ps._id}>
                       {ps.title}
                     </option>

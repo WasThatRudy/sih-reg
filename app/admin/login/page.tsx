@@ -1,5 +1,5 @@
 "use client";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
@@ -8,7 +8,7 @@ import ValidatedInput from "@/components/ui/ValidatedInput";
 import { useAdminAuth } from "@/lib/context/AdminAuthContext";
 
 export default function AdminLogin() {
-  const { signIn, loading: authLoading } = useAdminAuth();
+  const { signIn, loading: authLoading, admin } = useAdminAuth();
   const router = useRouter();
   const [formData, setFormData] = useState({
     email: "",
@@ -16,6 +16,17 @@ export default function AdminLogin() {
   });
   const [errors, setErrors] = useState<{ [key: string]: string }>({});
   const [submitLoading, setSubmitLoading] = useState(false);
+
+  // Redirect if already authenticated
+  useEffect(() => {
+    if (admin && !authLoading) {
+      if (admin.role === "evaluator") {
+        router.push("/admin/evaluator");
+      } else {
+        router.push("/admin");
+      }
+    }
+  }, [admin, authLoading, router]);
 
   const handleInputChange = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -52,7 +63,7 @@ export default function AdminLogin() {
     setSubmitLoading(true);
     try {
       await signIn(formData.email, formData.password);
-      router.push("/admin");
+      // Redirect will be handled by useEffect when admin state updates
     } catch (error: unknown) {
       console.error("Admin login error:", error);
 

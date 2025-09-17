@@ -7,6 +7,7 @@ export interface AdminAuthenticatedRequest extends NextRequest {
   admin?: {
     _id: string;
     email: string;
+    role: string;
     isAuthenticated: boolean;
   };
 }
@@ -53,6 +54,7 @@ export async function verifyAdminAuth(
     authenticatedRequest.admin = {
       _id: admin._id.toString(),
       email: admin.email,
+      role: admin.role,
       isAuthenticated: true,
     };
 

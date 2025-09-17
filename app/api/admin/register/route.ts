@@ -19,6 +19,29 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Determine role based on secret key
+    const evaluatorSecret = process.env.EVALUATOR_REGISTRATION_SECRET;
+    const superAdminSecret = process.env.SUPER_ADMIN_REGISTRATION_SECRET;
+
+    if (!evaluatorSecret || !superAdminSecret) {
+      return NextResponse.json(
+        { success: false, error: "Admin registration not configured" },
+        { status: 500 }
+      );
+    }
+
+    let adminRole: "evaluator" | "super-admin";
+    if (secretKey === evaluatorSecret) {
+      adminRole = "evaluator";
+    } else if (secretKey === superAdminSecret) {
+      adminRole = "super-admin";
+    } else {
+      return NextResponse.json(
+        { success: false, error: "Invalid secret key" },
+        { status: 401 }
+      );
+    }
+
     // Validate email format
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
@@ -36,22 +59,6 @@ export async function POST(request: NextRequest) {
           error: "Password must be at least 8 characters long",
         },
         { status: 400 }
-      );
-    }
-
-    // Verify secret key
-    const adminRegistrationSecret = process.env.ADMIN_REGISTRATION_SECRET;
-    if (!adminRegistrationSecret) {
-      return NextResponse.json(
-        { success: false, error: "Admin registration not configured" },
-        { status: 500 }
-      );
-    }
-
-    if (secretKey !== adminRegistrationSecret) {
-      return NextResponse.json(
-        { success: false, error: "Invalid secret key" },
-        { status: 401 }
       );
     }
 
@@ -75,6 +82,8 @@ export async function POST(request: NextRequest) {
     const newAdmin = new Admin({
       email: email.toLowerCase(),
       passwordHash,
+      role: adminRole,
+      isActive: true,
     });
 
     await newAdmin.save();
@@ -85,6 +94,7 @@ export async function POST(request: NextRequest) {
       admin: {
         _id: newAdmin._id,
         email: newAdmin.email,
+        role: newAdmin.role,
         createdAt: newAdmin.createdAt,
       },
     });

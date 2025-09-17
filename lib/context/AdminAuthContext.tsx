@@ -10,6 +10,7 @@ import {
 interface AdminUser {
   _id: string;
   email: string;
+  role: "super-admin" | "evaluator";
   createdAt?: Date;
 }
 
@@ -19,6 +20,8 @@ interface AdminAuthContextType {
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   isAuthenticated: boolean;
+  isSuperAdmin: boolean;
+  isEvaluator: boolean;
 }
 
 const AdminAuthContext = createContext<AdminAuthContextType | undefined>(
@@ -134,6 +137,8 @@ export const AdminAuthProvider: React.FC<AdminAuthProviderProps> = ({
     signIn,
     signOut,
     isAuthenticated: !!admin,
+    isSuperAdmin: admin?.role === "super-admin",
+    isEvaluator: admin?.role === "evaluator",
   };
 
   return (

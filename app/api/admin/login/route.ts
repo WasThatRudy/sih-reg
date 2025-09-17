@@ -51,6 +51,7 @@ export async function POST(request: NextRequest) {
       {
         adminId: admin._id,
         email: admin.email,
+        role: admin.role,
         isAdmin: true,
       },
       jwtSecret,
@@ -64,6 +65,7 @@ export async function POST(request: NextRequest) {
       admin: {
         _id: admin._id,
         email: admin.email,
+        role: admin.role,
         isAuthenticated: true,
         createdAt: admin.createdAt,
       },

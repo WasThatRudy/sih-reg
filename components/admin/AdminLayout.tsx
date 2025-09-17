@@ -10,12 +10,85 @@ interface AdminLayoutProps {
 }
 
 export default function AdminLayout({ children }: AdminLayoutProps) {
-  const { admin, signOut } = useAdminAuth();
+  const { admin, signOut, isSuperAdmin } = useAdminAuth();
   const router = useRouter();
   const pathname = usePathname();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const navigation = [
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      router.push("/login");
+    } catch (error) {
+      console.error("Error signing out:", error);
+    }
+  };
+
+  // Simplified layout for evaluators (no sidebar navigation)
+  if (!isSuperAdmin) {
+    return (
+      <AdminProtectedRoute>
+        <div className="min-h-screen bg-background">
+          {/* Header for evaluators */}
+          <div className="bg-gray-900 border-b border-gray-800">
+            <div className="px-4 sm:px-6 lg:px-8">
+              <div className="flex items-center justify-between h-16">
+                <div className="flex items-center">
+                  <h1 className="text-xl font-display text-heading">
+                    SIH Evaluator Portal
+                  </h1>
+                </div>
+
+                {/* User info and logout */}
+                <div className="flex items-center space-x-4">
+                  <div className="flex items-center">
+                    <div className="w-8 h-8 bg-heading/20 rounded-full flex items-center justify-center">
+                      <span className="text-sm font-medium text-heading">
+                        {admin?.email?.charAt(0)?.toUpperCase() || "E"}
+                      </span>
+                    </div>
+                    <div className="ml-3">
+                      <p className="text-sm font-medium text-white">
+                        Evaluator
+                      </p>
+                      <p className="text-xs text-gray-400">{admin?.email}</p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleSignOut}
+                    className="p-2 rounded-md text-gray-400 hover:text-white hover:bg-gray-800 focus:outline-none focus:ring-2 focus:ring-heading transition-colors"
+                    title="Sign out"
+                  >
+                    <svg
+                      className="w-5 h-5"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                        d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+                      />
+                    </svg>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Full-width content for evaluators */}
+          <main className="flex-1">
+            <div className="py-6 px-4 sm:px-6 lg:px-8">{children}</div>
+          </main>
+        </div>
+      </AdminProtectedRoute>
+    );
+  }
+
+  // Role-based navigation
+  const superAdminNavigation = [
     {
       name: "Dashboard",
       href: "/admin",
@@ -49,7 +122,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
             strokeLinecap="round"
             strokeLinejoin="round"
             strokeWidth={2}
-            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+            d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 515.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
           />
         </svg>
       ),
@@ -111,16 +184,29 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
         </svg>
       ),
     },
+    {
+      name: "Evaluator Management",
+      href: "/admin/evaluator-assignments",
+      icon: (
+        <svg
+          className="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            strokeWidth={2}
+            d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
+          />
+        </svg>
+      ),
+    },
   ];
 
-  const handleSignOut = async () => {
-    try {
-      await signOut();
-      router.push("/login");
-    } catch (error) {
-      console.error("Error signing out:", error);
-    }
-  };
+  // Super Admin layout with full navigation
+  const navigation = superAdminNavigation;
 
   return (
     <AdminProtectedRoute>
@@ -224,7 +310,7 @@ export default function AdminLayout({ children }: AdminLayoutProps) {
                   </div>
                   <div className="ml-3 flex-1">
                     <p className="text-sm font-medium text-white truncate">
-                      Admin
+                      {isSuperAdmin ? "Super Admin" : "Evaluator"}
                     </p>
                     <p className="text-xs text-gray-400 truncate">
                       {admin?.email}

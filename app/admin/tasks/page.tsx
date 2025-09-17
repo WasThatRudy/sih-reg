@@ -1,5 +1,5 @@
 "use client";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import AdminLayout from "@/components/admin/AdminLayout";
 import { useAdminAuth } from "@/lib/context/AdminAuthContext";
@@ -34,6 +34,7 @@ interface Team {
   teamName: string;
   leader: { name: string; email: string };
   status: string;
+  registrationDate: string;
 }
 
 export default function TasksManagement() {
@@ -52,6 +53,8 @@ export default function TasksManagement() {
   );
   const [teamSearchQuery, setTeamSearchQuery] = useState("");
   const [teamStatusFilter, setTeamStatusFilter] = useState("all");
+  const [registrationStartDate, setRegistrationStartDate] = useState("");
+  const [registrationEndDate, setRegistrationEndDate] = useState("");
   const [loading, setLoading] = useState(true);
   const [showCreateForm, setShowCreateForm] = useState(false);
   const [submitting, setSubmitting] = useState(false);
@@ -64,42 +67,6 @@ export default function TasksManagement() {
     dueDate: "",
     dueTime: "",
   });
-
-  useEffect(() => {
-    fetchTasks();
-    fetchTeamsForSelection();
-  }, []);
-
-  // Filter teams based on search query and status
-  useEffect(() => {
-    let filtered = allTeams;
-
-    // Filter by status
-    if (teamStatusFilter !== "all") {
-      filtered = filtered.filter((team) => team.status === teamStatusFilter);
-    }
-
-    // Filter by search query
-    if (teamSearchQuery.trim()) {
-      const query = teamSearchQuery.toLowerCase();
-      filtered = filtered.filter(
-        (team) =>
-          team.teamName.toLowerCase().includes(query) ||
-          team.leader.name.toLowerCase().includes(query) ||
-          team.leader.email.toLowerCase().includes(query)
-      );
-    }
-
-    setFilteredTeams(filtered);
-  }, [allTeams, teamSearchQuery, teamStatusFilter]);
-
-  // Update assignedTo array when selectedTeamIds changes
-  useEffect(() => {
-    setNewTask((prev) => ({
-      ...prev,
-      assignedTo: Array.from(selectedTeamIds),
-    }));
-  }, [selectedTeamIds]);
 
   // Function definitions
   const fetchTasks = async () => {
@@ -127,14 +94,29 @@ export default function TasksManagement() {
     }
   };
 
-  const fetchTeamsForSelection = async () => {
+  const fetchTeamsForSelection = useCallback(async () => {
     const token = localStorage.getItem("adminToken");
     if (!token) return;
 
     try {
-      const response = await fetch("/api/admin/teams/selection", {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+      // Build query parameters
+      const params = new URLSearchParams();
+      if (teamStatusFilter !== "all") {
+        params.append("status", teamStatusFilter);
+      }
+      if (registrationStartDate) {
+        params.append("startDate", registrationStartDate);
+      }
+      if (registrationEndDate) {
+        params.append("endDate", registrationEndDate);
+      }
+
+      const response = await fetch(
+        `/api/admin/teams/selection?${params.toString()}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
       if (response.ok) {
         const data = await response.json();
@@ -147,7 +129,103 @@ export default function TasksManagement() {
     } catch (error) {
       console.error("Error fetching teams:", error);
     }
-  };
+  }, [teamStatusFilter, registrationStartDate, registrationEndDate]);
+
+  useEffect(() => {
+    fetchTasks();
+    // Initial fetch of teams without any filters
+    const initialFetchTeams = async () => {
+      const token = localStorage.getItem("adminToken");
+      if (!token) return;
+
+      try {
+        const response = await fetch("/api/admin/teams/selection", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+          setAllTeams(data.teams || []);
+          setTeamsByStatus(data.teamsByStatus || {});
+          setStatusCounts(data.statusCounts || {});
+        } else {
+          console.error("Failed to fetch teams:", response.status);
+        }
+      } catch (error) {
+        console.error("Error fetching teams:", error);
+      }
+    };
+
+    initialFetchTeams();
+  }, []);
+
+  // Refetch teams when filters change
+  useEffect(() => {
+    fetchTeamsForSelection();
+  }, [
+    teamStatusFilter,
+    registrationStartDate,
+    registrationEndDate,
+    fetchTeamsForSelection,
+  ]);
+
+  // Filter teams based on search query and status
+  useEffect(() => {
+    let filtered = allTeams;
+
+    // Filter by status
+    if (teamStatusFilter !== "all") {
+      filtered = filtered.filter((team) => team.status === teamStatusFilter);
+    }
+
+    // Filter by registration date range
+    if (registrationStartDate || registrationEndDate) {
+      filtered = filtered.filter((team) => {
+        const teamRegDate = new Date(team.registrationDate);
+        let matchesDateRange = true;
+
+        if (registrationStartDate) {
+          const startDate = new Date(registrationStartDate);
+          matchesDateRange = matchesDateRange && teamRegDate >= startDate;
+        }
+
+        if (registrationEndDate) {
+          const endDate = new Date(registrationEndDate);
+          endDate.setHours(23, 59, 59, 999); // Include the full day
+          matchesDateRange = matchesDateRange && teamRegDate <= endDate;
+        }
+
+        return matchesDateRange;
+      });
+    }
+
+    // Filter by search query
+    if (teamSearchQuery.trim()) {
+      const query = teamSearchQuery.toLowerCase();
+      filtered = filtered.filter(
+        (team) =>
+          team.teamName.toLowerCase().includes(query) ||
+          team.leader.name.toLowerCase().includes(query) ||
+          team.leader.email.toLowerCase().includes(query)
+      );
+    }
+
+    setFilteredTeams(filtered);
+  }, [
+    allTeams,
+    teamSearchQuery,
+    teamStatusFilter,
+    registrationStartDate,
+    registrationEndDate,
+  ]);
+
+  // Update assignedTo array when selectedTeamIds changes
+  useEffect(() => {
+    setNewTask((prev) => ({
+      ...prev,
+      assignedTo: Array.from(selectedTeamIds),
+    }));
+  }, [selectedTeamIds]);
 
   // Bulk selection functions
   const selectAllTeams = () => {
@@ -195,6 +273,8 @@ export default function TasksManagement() {
     setSelectedTeamIds(new Set());
     setTeamSearchQuery("");
     setTeamStatusFilter("all");
+    setRegistrationStartDate("");
+    setRegistrationEndDate("");
   };
 
   const addField = () => {
@@ -699,6 +779,69 @@ export default function TasksManagement() {
                         className="w-full px-3 py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-heading"
                       />
 
+                      {/* Registration Date Filter */}
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <label className="block text-gray-300 text-xs mb-1">
+                            Registration Start Date
+                          </label>
+                          <input
+                            type="date"
+                            value={registrationStartDate}
+                            onChange={(e) =>
+                              setRegistrationStartDate(e.target.value)
+                            }
+                            className="w-full px-3 py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-heading"
+                            placeholder="From date"
+                          />
+                        </div>
+                        <div>
+                          <label className="block text-gray-300 text-xs mb-1">
+                            Registration End Date
+                          </label>
+                          <input
+                            type="date"
+                            value={registrationEndDate}
+                            onChange={(e) =>
+                              setRegistrationEndDate(e.target.value)
+                            }
+                            className="w-full px-3 py-2 bg-gray-800/50 border border-gray-600 rounded-lg text-white text-sm focus:outline-none focus:ring-2 focus:ring-heading"
+                            placeholder="To date"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Clear Date Filters Button */}
+                      {(registrationStartDate || registrationEndDate) && (
+                        <div className="flex items-center gap-2">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setRegistrationStartDate("");
+                              setRegistrationEndDate("");
+                            }}
+                            className="px-3 py-1 bg-red-500/20 text-red-400 border border-red-500/30 rounded text-sm hover:bg-red-500/30 transition-colors"
+                          >
+                            Clear Date Filters
+                          </button>
+                          <span className="text-xs text-gray-400">
+                            {registrationStartDate && registrationEndDate
+                              ? `Showing teams registered between ${new Date(
+                                  registrationStartDate
+                                ).toLocaleDateString()} and ${new Date(
+                                  registrationEndDate
+                                ).toLocaleDateString()}`
+                              : registrationStartDate
+                              ? `Showing teams registered from ${new Date(
+                                  registrationStartDate
+                                ).toLocaleDateString()}`
+                              : `Showing teams registered until ${new Date(
+                                  registrationEndDate
+                                ).toLocaleDateString()}`}
+                          </span>
+                        </div>
+                      )}
+
                       {/* Filter and Bulk Selection Row */}
                       <div className="flex flex-wrap items-center gap-3">
                         {/* Status Filter */}
@@ -783,7 +926,10 @@ export default function TasksManagement() {
                     <div className="bg-gray-800/50 border border-gray-600 rounded-lg max-h-60 overflow-y-auto">
                       {filteredTeams.length === 0 ? (
                         <div className="p-4 text-center text-gray-400">
-                          {teamSearchQuery || teamStatusFilter !== "all"
+                          {teamSearchQuery ||
+                          teamStatusFilter !== "all" ||
+                          registrationStartDate ||
+                          registrationEndDate
                             ? "No teams match the current filters"
                             : "No teams available"}
                         </div>
@@ -821,6 +967,16 @@ export default function TasksManagement() {
                                 </div>
                                 <div className="text-gray-400 text-xs truncate">
                                   {team.leader.name} • {team.leader.email}
+                                </div>
+                                <div className="text-gray-500 text-xs">
+                                  Registered:{" "}
+                                  {new Date(
+                                    team.registrationDate
+                                  ).toLocaleDateString("en-IN", {
+                                    year: "numeric",
+                                    month: "short",
+                                    day: "numeric",
+                                  })}
                                 </div>
                               </div>
                             </label>

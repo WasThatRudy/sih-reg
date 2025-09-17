@@ -550,13 +550,13 @@ export default function TeamInfo() {
             </motion.div>
 
             {/* Withdraw Button */}
-            <WithdrawButton 
+            {/* <WithdrawButton 
               teamName={team.teamName}
               onWithdrawSuccess={() => {
                 // This will be called after successful withdrawal
                 // The component handles redirection internally
               }}
-            />
+            /> */}
           </motion.div>
         </div>
       </div>

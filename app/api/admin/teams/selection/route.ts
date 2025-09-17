@@ -13,6 +13,7 @@ interface TeamForSelection {
   teamName: string;
   status: string;
   leader: PopulatedLeader;
+  registrationDate: string;
 }
 
 // GET /api/admin/teams/selection - Get minimal team data for task assignment
@@ -25,6 +26,8 @@ export async function GET(request: NextRequest) {
 
     const url = new URL(request.url);
     const status = url.searchParams.get("status");
+    const startDate = url.searchParams.get("startDate");
+    const endDate = url.searchParams.get("endDate");
 
     // Build query for team selection
     const query: Record<string, unknown> = {};
@@ -33,10 +36,25 @@ export async function GET(request: NextRequest) {
       query.status = status;
     }
 
+    // Add registration date filtering
+    if (startDate || endDate) {
+      const dateQuery: Record<string, Date> = {};
+      if (startDate) {
+        dateQuery.$gte = new Date(startDate);
+      }
+      if (endDate) {
+        // Add 23:59:59 to end date to include the full day
+        const endDateObj = new Date(endDate);
+        endDateObj.setHours(23, 59, 59, 999);
+        dateQuery.$lte = endDateObj;
+      }
+      query.registrationDate = dateQuery;
+    }
+
     // Get minimal team data for selection
     const teams = await Team.find(query)
       .populate("leader", "name email")
-      .select("_id teamName status leader")
+      .select("_id teamName status leader registrationDate")
       .sort({ teamName: 1 });
 
     // Group teams by status for easier bulk selection
@@ -54,6 +72,7 @@ export async function GET(request: NextRequest) {
           email: leader.email,
         },
         status: team.status,
+        registrationDate: team.registrationDate.toISOString(),
       });
       return acc;
     }, {} as Record<string, TeamForSelection[]>);
@@ -85,6 +104,7 @@ export async function GET(request: NextRequest) {
             name: leader.name,
             email: leader.email,
           },
+          registrationDate: team.registrationDate.toISOString(),
         };
       }),
       teamsByStatus,

@@ -2,6 +2,8 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/middleware/adminAuth";
 import { Task } from "@/models/Task";
 import { Team, ITaskSubmission } from "@/models/Team";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import { User } from "@/models/User";
 import dbConnect from "@/lib/mongodb";
 
 // GET /api/admin/submissions/[taskId] - Get all submissions for a specific task

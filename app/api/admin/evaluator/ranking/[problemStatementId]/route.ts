@@ -22,6 +22,7 @@ export async function GET(
     const { Team } = await import("@/models/Team");
     const { Evaluation } = await import("@/models/Evaluation");
     const { ProblemStatement } = await import("@/models/ProblemStatement");
+    const { PptEvaluation } = await import("@/models/PptEvaluations");
     const { Task } = await import("@/models/Task");
     const { User } = await import("@/models/User");
 
@@ -80,10 +81,21 @@ export async function GET(
       evaluatorId: evaluator._id,
     });
 
+    // Get all PPT evaluations for teams in one query
+    const pptEvaluations = await PptEvaluation.find({
+      teamName: { $in: teams.map(team => team.teamName) },
+      problemStatement: problemStatement.title,
+    }).lean();
+
     // Prepare teams with existing rankings and organized submissions
     const teamsWithRankings = teams.map((team) => {
       const existingRanking = existingEvaluation?.rankings.find(
         (r) => r.teamId.toString() === team._id.toString()
+      );
+
+      // Find PPT evaluation for this team
+      const pptEvaluation = pptEvaluations.find(
+        (evaluation) => evaluation.teamName === team.teamName
       );
 
       // Organize task submissions with task details
@@ -122,6 +134,7 @@ export async function GET(
         currentRank: existingRanking?.rank,
         score: existingRanking?.score,
         comments: existingRanking?.comments,
+        pptEvaluation: pptEvaluation,
       };
     });
 

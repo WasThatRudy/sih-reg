@@ -40,7 +40,6 @@ export async function GET(
       );
     }
 
-    const evaluation = await Evaluation.findOne({ teamName: team.teamName });
 
     return NextResponse.json({
       success: true,
@@ -56,8 +55,7 @@ export async function GET(
         updatedAt: team.updatedAt,
         tasks: team.tasks,
         memberCount: team.members.length,
-      },
-      evaluation: evaluation,
+      }
     });
   } catch (error: unknown) {
     console.error("Get team details error:", error);

@@ -1,15 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/middleware/adminAuth";
-import { Admin } from "@/models/Admin";
-import { Team } from "@/models/Team";
-import { Evaluation } from "@/models/Evaluation";
-import { ProblemStatement } from "@/models/ProblemStatement";
-import { Task } from "@/models/Task";
 import dbConnect from "@/lib/mongodb";
 
-// Ensure models are registered
-void ProblemStatement;
-void Task;
+// Import models after database connection to avoid registration issues
 
 // GET /api/admin/evaluator/ranking/[problemStatementId] - Get teams to rank for a problem statement
 export async function GET(
@@ -23,6 +16,14 @@ export async function GET(
     const authenticatedRequest = await verifyAdminAuth(request);
 
     await dbConnect();
+
+    // Import models after connection to avoid registration issues
+    const { Admin } = await import("@/models/Admin");
+    const { Team } = await import("@/models/Team");
+    const { Evaluation } = await import("@/models/Evaluation");
+    const { ProblemStatement } = await import("@/models/ProblemStatement");
+    const { Task } = await import("@/models/Task");
+    const { User } = await import("@/models/User");
 
     // Get the current evaluator
     const evaluator = await Admin.findById(authenticatedRequest.admin?._id);
@@ -174,6 +175,14 @@ export async function POST(
     const authenticatedRequest = await verifyAdminAuth(request);
 
     await dbConnect();
+
+    // Import models after connection to avoid registration issues
+    const { Admin } = await import("@/models/Admin");
+    const { Team } = await import("@/models/Team");
+    const { Evaluation } = await import("@/models/Evaluation");
+    const { ProblemStatement } = await import("@/models/ProblemStatement");
+    const { Task } = await import("@/models/Task");
+    const { User } = await import("@/models/User");
 
     // Get the current evaluator
     const evaluator = await Admin.findById(authenticatedRequest.admin?._id);

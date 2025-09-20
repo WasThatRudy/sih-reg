@@ -79,10 +79,22 @@ export async function GET(
       evaluatorId: evaluator._id,
     });
 
+    // Get all evaluations for teams in this problem statement
+    const teamEvaluations = await Evaluation.find({
+      "rankings.teamId": { $in: teams.map(team => team._id) }
+    }).lean();
+
     // Prepare teams with existing rankings and organized submissions
     const teamsWithRankings = teams.map((team) => {
       const existingRanking = existingEvaluation?.rankings.find(
         (r) => r.teamId.toString() === team._id.toString()
+      );
+
+      // Find evaluation that includes this team (similar to teamId route pattern)
+      const teamEvaluation = teamEvaluations.find(evaluation => 
+        evaluation.rankings.some(ranking => 
+          ranking.teamId.toString() === team._id.toString()
+        )
       );
 
       // Organize task submissions with task details
@@ -121,6 +133,7 @@ export async function GET(
         currentRank: existingRanking?.rank,
         score: existingRanking?.score,
         comments: existingRanking?.comments,
+        evaluation: teamEvaluation,
       };
     });
 

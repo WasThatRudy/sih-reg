@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "../../../../../lib/middleware/adminAuth";
 import dbConnect from "../../../../../lib/mongodb";
 import { Team } from "../../../../../models/Team";
+import { Evaluation } from "../../../../../models/Evaluation";
 
 // Import models to ensure they are registered with Mongoose
 import "../../../../../models/User";
@@ -39,6 +40,8 @@ export async function GET(
       );
     }
 
+    const evaluation = await Evaluation.findOne({ teamName: team.teamName });
+
     return NextResponse.json({
       success: true,
       team: {
@@ -54,6 +57,7 @@ export async function GET(
         tasks: team.tasks,
         memberCount: team.members.length,
       },
+      evaluation: evaluation,
     });
   } catch (error: unknown) {
     console.error("Get team details error:", error);

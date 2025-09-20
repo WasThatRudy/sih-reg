@@ -31,6 +31,20 @@ interface TaskSubmission {
   status: string;
 }
 
+interface PPTEvaluation {
+  _id: string;
+  teamName: string;
+  problemStatement: string;
+  evaluationResult: {
+    diagramsUsed: number;
+    evaluation: string;
+    finalScore: number;
+    problemStatement: string;
+    teamName: string;
+  };
+  pptLinks: string[];
+}
+
 interface Team {
   _id: string;
   teamName: string;
@@ -43,6 +57,7 @@ interface Team {
   submissions: TaskSubmission[];
   currentRank?: number;
   comments?: string;
+  pptEvaluation?: PPTEvaluation;
 }
 
 interface ProblemStatement {
@@ -76,12 +91,22 @@ export default function EvaluatorRanking() {
   const [expandedSubmissions, setExpandedSubmissions] = useState<{
     [teamId: string]: boolean;
   }>({});
+  const [expandedTeams, setExpandedTeams] = useState<{
+    [teamId: string]: boolean;
+  }>({});
   const [showPDFModal, setShowPDFModal] = useState(false);
   const [selectedPDFUrl, setSelectedPDFUrl] = useState("");
 
   // Helper functions
   const toggleSubmissions = (teamId: string) => {
     setExpandedSubmissions((prev) => ({
+      ...prev,
+      [teamId]: !prev[teamId],
+    }));
+  };
+
+  const toggleTeam = (teamId: string) => {
+    setExpandedTeams((prev) => ({
       ...prev,
       [teamId]: !prev[teamId],
     }));
@@ -109,6 +134,41 @@ export default function EvaluatorRanking() {
     return fileUrl.split("/").pop() || "file";
   };
 
+  // Parse PPT evaluation scores from the evaluation string
+  const parseEvaluationScores = (evaluation: string) => {
+    const scores: { [key: string]: string } = {};
+    const lines = evaluation.split('\n');
+    
+    lines.forEach(line => {
+      const trimmedLine = line.trim();
+      if (trimmedLine.includes(':')) {
+        const [category, scoreAndComment] = trimmedLine.split(':');
+        if (category && scoreAndComment) {
+          const categoryName = category.trim();
+          scores[categoryName] = scoreAndComment.trim();
+        }
+      }
+    });
+    
+    return scores;
+  };
+
+  // Get score color based on score value
+  const getScoreColor = (scoreText: string) => {
+    const match = scoreText.match(/^(\d+)\/(\d+)/);
+    if (match) {
+      const score = parseInt(match[1]);
+      const maxScore = parseInt(match[2]);
+      const percentage = (score / maxScore) * 100;
+      
+      if (percentage >= 80) return "text-green-400";
+      if (percentage >= 60) return "text-yellow-400";
+      if (percentage >= 40) return "text-orange-400";
+      return "text-red-400";
+    }
+    return "text-gray-400";
+  };
+
   const fetchRankingData = useCallback(async () => {
     const token = localStorage.getItem("adminToken");
     if (!token) {
@@ -128,13 +188,23 @@ export default function EvaluatorRanking() {
         const data = await response.json();
         setRankingData(data);
 
-        // Sort teams by current rank or by registration date
+        // Sort teams by PPT evaluation final score (highest first), then by current rank, then by registration date
         const sortedTeams = [...data.teams].sort((a, b) => {
+          // First priority: PPT evaluation final score (highest first)
+          const scoreA = a.pptEvaluation?.evaluationResult?.finalScore || 0;
+          const scoreB = b.pptEvaluation?.evaluationResult?.finalScore || 0;
+          if (scoreA !== scoreB) {
+            return scoreB - scoreA; // Higher score comes first
+          }
+          
+          // Second priority: current rank
           if (a.currentRank && b.currentRank) {
             return a.currentRank - b.currentRank;
           }
           if (a.currentRank) return -1;
           if (b.currentRank) return 1;
+          
+          // Third priority: registration date
           return (
             new Date(a.registrationDate).getTime() -
             new Date(b.registrationDate).getTime()
@@ -382,7 +452,7 @@ export default function EvaluatorRanking() {
                 <Reorder.Item
                   key={team._id}
                   value={team}
-                  className={`bg-gray-800/50 border border-gray-700 rounded-xl p-4 ${
+                  className={`bg-gray-800/50 border border-gray-700 rounded-xl ${
                     !isFinalized
                       ? "cursor-grab active:cursor-grabbing"
                       : "cursor-default"
@@ -393,34 +463,56 @@ export default function EvaluatorRanking() {
                   exit={{ opacity: 0, y: -20 }}
                   transition={{ duration: 0.2 }}
                 >
-                  <div className="flex items-start gap-4">
-                    {/* Drag Handle & Rank */}
-                    <div className="flex items-center gap-3">
-                      {!isFinalized && (
-                        <GripVertical className="w-5 h-5 text-gray-500" />
-                      )}
-                      <div
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium ${getRankColor(
-                          index + 1
-                        )}`}
-                      >
-                        {getRankIcon(index + 1)}
-                        <span>#{index + 1}</span>
-                      </div>
-                    </div>
-
-                    {/* Team Info */}
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between mb-2">
-                        <div>
-                          <h3 className="text-lg font-display text-heading">
-                            {team.teamName}
-                          </h3>
-                          <p className="text-gray-400 text-sm">
-                            Leader: {team.leader.name} ({team.leader.email})
-                          </p>
+                  {/* Collapsed Team Card */}
+                  <div className="p-4">
+                    <div className="flex items-center gap-4">
+                      {/* Drag Handle & Rank */}
+                      <div className="flex items-center gap-3">
+                        {!isFinalized && (
+                          <GripVertical className="w-5 h-5 text-gray-500" />
+                        )}
+                        <div
+                          className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium ${getRankColor(
+                            index + 1
+                          )}`}
+                        >
+                          {getRankIcon(index + 1)}
+                          <span>#{index + 1}</span>
                         </div>
                       </div>
+
+                      {/* Team Basic Info */}
+                      <div className="flex-1">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <h3 className="text-lg font-display text-heading">
+                              {team.teamName}
+                            </h3>
+                            <p className="text-gray-400 text-sm">
+                              Leader: {team.leader.name} ({team.leader.email})
+                            </p>
+                          </div>
+                          
+                          {/* Expand/Collapse Button */}
+                          <button
+                            onClick={() => toggleTeam(team._id)}
+                            className="w-10 h-10 flex items-center justify-center text-gray-400 hover:text-white hover:bg-gray-700/50 rounded-lg transition-all duration-200 border border-transparent hover:border-gray-600"
+                          >
+                            {expandedTeams[team._id] ? (
+                              <ChevronUp className="w-5 h-5" />
+                            ) : (
+                              <ChevronDown className="w-5 h-5" />
+                            )}
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Expanded Team Details */}
+                  {expandedTeams[team._id] && (
+                    <div className="px-4 pb-4 border-t border-gray-700">
+                      <div className="pt-4">
 
                       {/* Submissions Section */}
                       <div className="mt-4">
@@ -429,18 +521,7 @@ export default function EvaluatorRanking() {
                             📋 Submissions ({team.submissions?.length || 0}{" "}
                             tasks)
                           </h4>
-                          {team.submissions && team.submissions.length > 0 && (
-                            <button
-                              onClick={() => toggleSubmissions(team._id)}
-                              className="text-blue-400 hover:text-blue-300 transition-colors"
-                            >
-                              {expandedSubmissions[team._id] ? (
-                                <ChevronUp className="w-4 h-4" />
-                              ) : (
-                                <ChevronDown className="w-4 h-4" />
-                              )}
-                            </button>
-                          )}
+
                         </div>
 
                         {/* Submissions List */}
@@ -502,7 +583,7 @@ export default function EvaluatorRanking() {
                                                         }
                                                         className="text-blue-400 hover:text-blue-300"
                                                         title="Preview"
-                                                      >
+                                                        >
                                                         <Eye className="w-3 h-3" />
                                                       </button>
                                                     )}
@@ -583,6 +664,38 @@ export default function EvaluatorRanking() {
                         )}
                       </div>
 
+                      {/* PPT Evaluation Section */}
+                      {team.pptEvaluation && (
+                        <div className="mt-4 p-4 bg-gray-800/30 rounded-lg border border-gray-700">
+                          <h4 className="text-sm font-medium text-gray-300 mb-3 flex items-center gap-2">
+                            PPT Evaluation Breakdown
+                          </h4>
+                          
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                            {Object.entries(parseEvaluationScores(team.pptEvaluation.evaluationResult.evaluation)).map(([category, scoreAndComment]) => {
+                              const [scoreText, ...commentParts] = scoreAndComment.split(' - ');
+                              const comment = commentParts.join(' - ');
+                              
+                              return (
+                                <div key={category} className="p-2 bg-gray-900/50 rounded text-xs">
+                                  <div className="flex items-center justify-between mb-1">
+                                    <span className="text-gray-300 font-medium">{category}</span>
+                                    <span className={`font-bold ${getScoreColor(scoreText)}`}>
+                                      {scoreText}
+                                    </span>
+                                  </div>
+                                  {comment && (
+                                    <p className="text-gray-400 text-xs leading-relaxed">
+                                      {comment}
+                                    </p>
+                                  )}
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      )}
+
                       {/* Evaluation Comments - Now Required */}
                       <div className="mt-4">
                         <label className="block text-sm font-medium text-gray-300 mb-2">
@@ -599,15 +712,16 @@ export default function EvaluatorRanking() {
                           placeholder="Required: Enter detailed evaluation feedback..."
                           rows={3}
                           required
-                        />
+                          />
                         <p className="text-xs text-gray-500 mt-1">
                           Provide comprehensive feedback on innovation,
                           technical implementation, business viability, and
                           presentation quality.
                         </p>
                       </div>
+                      </div>
                     </div>
-                  </div>
+                  )}
                 </Reorder.Item>
               ))}
             </AnimatePresence>

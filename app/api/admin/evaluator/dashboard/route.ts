@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
       _id: string;
       title: string;
       description?: string;
+      psNumber: string;
     }>;
     const evaluationStatuses = await Promise.all(
       assignedPS.map(async (ps) => {
@@ -61,6 +62,7 @@ export async function GET(request: NextRequest) {
             _id: ps._id,
             title: ps.title,
             description: ps.description,
+            psNumber: ps.psNumber,
           },
           totalTeams,
           isEvaluated: !!evaluation,

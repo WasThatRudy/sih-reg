@@ -63,6 +63,11 @@ export default function EvaluatorDashboard() {
 
       if (response.ok) {
         const data = await response.json();
+        console.log("Dashboard API Response:", data);
+        console.log(
+          "Assigned Problem Statements:",
+          data.assignedProblemStatements
+        );
         setDashboardData(data);
       } else if (response.status === 403) {
         // Not an evaluator, redirect to regular admin panel

@@ -16,6 +16,7 @@ import {
 interface ProblemStatement {
   _id: string;
   title: string;
+  psNumber?: string;
 }
 
 interface Evaluator {
@@ -175,6 +176,14 @@ export default function EvaluatorAssignments() {
 
   const { evaluators, problemStatements } = assignmentData;
 
+  // Helper function to format problem statement display
+  const formatProblemStatement = (ps: ProblemStatement) => {
+    if (ps.psNumber) {
+      return `${ps.psNumber} - ${ps.title}`;
+    }
+    return ps.title;
+  };
+
   return (
     <AdminLayout>
       <div className="space-y-6">
@@ -324,7 +333,9 @@ export default function EvaluatorAssignments() {
                                     }
                                     className="w-4 h-4 text-heading bg-gray-700 border-gray-600 rounded focus:ring-heading"
                                   />
-                                  <span className="flex-1">{ps.title}</span>
+                                  <span className="flex-1">
+                                    {formatProblemStatement(ps)}
+                                  </span>
                                 </label>
                               ))}
                             </div>
@@ -372,7 +383,7 @@ export default function EvaluatorAssignments() {
                                       key={ps._id}
                                       className="px-3 py-2 bg-gray-800/50 border border-gray-700 rounded-lg text-sm text-gray-300"
                                     >
-                                      {ps.title}
+                                      {formatProblemStatement(ps)}
                                     </div>
                                   )
                                 )}

@@ -26,13 +26,13 @@ export async function GET(request: NextRequest) {
       role: "evaluator",
       isActive: true,
     })
-      .populate("assignedProblemStatements", "title")
+      .populate("assignedProblemStatements", "title psNumber")
       .select("email assignedProblemStatements isActive createdAt");
 
     // Get all problem statements
     const problemStatements = await ProblemStatement.find({
       isActive: true,
-    }).select("title");
+    }).select("title psNumber");
 
     return NextResponse.json({
       success: true,
@@ -113,7 +113,7 @@ export async function POST(request: NextRequest) {
     await evaluator.save();
 
     // Populate the updated assignments for response
-    await evaluator.populate("assignedProblemStatements", "title");
+    await evaluator.populate("assignedProblemStatements", "title psNumber");
 
     return NextResponse.json({
       success: true,

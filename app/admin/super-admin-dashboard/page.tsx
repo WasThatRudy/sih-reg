@@ -275,6 +275,50 @@ export default function SuperAdminDashboard() {
               Monitor all team submissions
             </p>
           </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() =>
+              router.push("/admin/super-admin-dashboard/evaluator-rankings")
+            }
+            className="p-6 bg-gradient-to-r from-cyan-600/10 to-cyan-400/10 border border-cyan-500/30 rounded-xl text-left hover:border-cyan-400/50 transition-all duration-300"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-cyan-500/20 rounded-lg">
+                <Award className="w-6 h-6 text-cyan-400" />
+              </div>
+              <span className="text-2xl font-bold text-cyan-400">Track</span>
+            </div>
+            <h3 className="text-lg font-medium text-white mb-2">
+              Evaluator Rankings
+            </h3>
+            <p className="text-gray-400 text-sm">
+              View individual evaluator progress and rankings
+            </p>
+          </motion.button>
+
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            onClick={() =>
+              router.push("/admin/super-admin-dashboard/problem-rankings")
+            }
+            className="p-6 bg-gradient-to-r from-pink-600/10 to-pink-400/10 border border-pink-500/30 rounded-xl text-left hover:border-pink-400/50 transition-all duration-300"
+          >
+            <div className="flex items-center justify-between mb-4">
+              <div className="p-3 bg-pink-500/20 rounded-lg">
+                <TrendingUp className="w-6 h-6 text-pink-400" />
+              </div>
+              <span className="text-2xl font-bold text-pink-400">Compare</span>
+            </div>
+            <h3 className="text-lg font-medium text-white mb-2">
+              Problem Rankings
+            </h3>
+            <p className="text-gray-400 text-sm">
+              Analyze rankings across evaluators for each problem
+            </p>
+          </motion.button>
         </motion.div>
 
         {/* Statistics Overview */}

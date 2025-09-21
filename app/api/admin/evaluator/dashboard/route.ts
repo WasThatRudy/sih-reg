@@ -20,7 +20,7 @@ export async function GET(request: NextRequest) {
     // Get the current evaluator
     const evaluator = await Admin.findById(
       authenticatedRequest.admin?._id
-    ).populate("assignedProblemStatements", "title description");
+    ).populate("assignedProblemStatements", "title description psNumber");
 
     if (!evaluator) {
       return NextResponse.json(

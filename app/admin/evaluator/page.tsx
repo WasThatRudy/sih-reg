@@ -17,6 +17,7 @@ interface ProblemStatementStatus {
     _id: string;
     title: string;
     description?: string;
+    psNumber: string; // Changed from number to string
   };
   totalTeams: number;
   isEvaluated: boolean;
@@ -45,6 +46,7 @@ export default function EvaluatorDashboard() {
       await fetchDashboardData();
     };
     loadData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const fetchDashboardData = async () => {
@@ -263,7 +265,7 @@ export default function EvaluatorDashboard() {
                         </span>
                       </div>
                       <h3 className="text-lg font-display text-heading mb-2">
-                        {ps.problemStatement.title}
+                        {ps.problemStatement.psNumber}: {ps.problemStatement.title}
                       </h3>
                       {ps.problemStatement.description && (
                         <p className="text-gray-400 text-sm mb-3 line-clamp-2">

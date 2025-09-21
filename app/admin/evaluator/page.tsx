@@ -265,7 +265,8 @@ export default function EvaluatorDashboard() {
                         </span>
                       </div>
                       <h3 className="text-lg font-display text-heading mb-2">
-                        {ps.problemStatement.psNumber}: {ps.problemStatement.title}
+                        {ps.problemStatement.psNumber}:{" "}
+                        {ps.problemStatement.title}
                       </h3>
                       {ps.problemStatement.description && (
                         <p className="text-gray-400 text-sm mb-3 line-clamp-2">

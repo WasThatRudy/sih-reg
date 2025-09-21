@@ -19,6 +19,8 @@ export async function GET(
     const { Admin } = await import("@/models/Admin");
     const { Evaluation } = await import("@/models/Evaluation");
     const { Team } = await import("@/models/Team");
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    const { ProblemStatement } = await import("@/models/ProblemStatement");
 
     // Check if user is super admin
     const admin = await Admin.findById(authenticatedRequest.admin?._id);
@@ -32,7 +34,7 @@ export async function GET(
     // Get the specific evaluator
     const evaluator = await Admin.findById(evaluatorId)
       .populate("assignedProblemStatements", "title description")
-      .select("email assignedProblemStatements isActive createdAt")
+      .select("email role assignedProblemStatements isActive createdAt")
       .lean();
 
     if (!evaluator || evaluator.role !== "evaluator") {

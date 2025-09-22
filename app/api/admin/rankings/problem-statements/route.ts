@@ -29,7 +29,7 @@ export async function GET(request: NextRequest) {
     const problemStatements = await ProblemStatement.find({
       isActive: true,
     })
-      .select("title description")
+      .select("psNumber title description")
       .lean();
 
     // Get all evaluator assignments
@@ -45,11 +45,12 @@ export async function GET(request: NextRequest) {
       .select("problemStatementId evaluatorId isFinalized rankings")
       .lean();
 
-    // Get team counts for all problem statements
+    // Get team counts for all problem statements (only teams with at least 1 task)
     const teamCounts = await Team.aggregate([
       {
         $match: {
           status: { $ne: "rejected" },
+          $expr: { $gte: [{ $size: "$tasks" }, 1] }, // Only teams with at least 1 task
         },
       },
       {
@@ -67,43 +68,46 @@ export async function GET(request: NextRequest) {
     });
 
     // Calculate statistics for each problem statement
-    const problemStatementsWithStats = problemStatements.map((ps) => {
-      const psId = ps._id.toString();
+    const problemStatementsWithStats = problemStatements
+      .map((ps) => {
+        const psId = ps._id.toString();
 
-      // Count assigned evaluators
-      const assignedEvaluators = evaluators.filter((evaluator) =>
-        evaluator.assignedProblemStatements.some(
-          (assignmentId) => assignmentId.toString() === psId
-        )
-      ).length;
+        // Count assigned evaluators
+        const assignedEvaluators = evaluators.filter((evaluator) =>
+          evaluator.assignedProblemStatements.some(
+            (assignmentId) => assignmentId.toString() === psId
+          )
+        ).length;
 
-      // Get evaluations for this problem statement
-      const psEvaluations = allEvaluations.filter(
-        (evaluation) => evaluation.problemStatementId.toString() === psId
-      );
+        // Get evaluations for this problem statement
+        const psEvaluations = allEvaluations.filter(
+          (evaluation) => evaluation.problemStatementId.toString() === psId
+        );
 
-      // Count completed evaluations
-      const completedEvaluations = psEvaluations.filter(
-        (evaluation) => evaluation.isFinalized
-      ).length;
+        // Count completed evaluations
+        const completedEvaluations = psEvaluations.filter(
+          (evaluation) => evaluation.isFinalized
+        ).length;
 
-      // Calculate conflicts (simplified - teams with high ranking variance)
-      const conflictingTeams = calculateConflicts(psEvaluations);
+        // Calculate conflicts (simplified - teams with high ranking variance)
+        const conflictingTeams = calculateConflicts(psEvaluations);
 
-      // Get total teams
-      const totalTeams = teamCountMap.get(psId) || 0;
+        // Get total teams
+        const totalTeams = teamCountMap.get(psId) || 0;
 
-      return {
-        _id: ps._id,
-        title: ps.title,
-        description: ps.description,
-        assignedEvaluators,
-        completedEvaluations,
-        totalTeams,
-        conflictingTeams,
-        isActive: true,
-      };
-    });
+        return {
+          _id: ps._id,
+          psNumber: ps.psNumber,
+          title: ps.title,
+          description: ps.description,
+          assignedEvaluators,
+          completedEvaluations,
+          totalTeams,
+          conflictingTeams,
+          isActive: true,
+        };
+      })
+      .filter((ps) => ps.totalTeams > 0 && ps.assignedEvaluators > 0); // Only show problem statements with both teams (with tasks) and assigned evaluators
 
     return NextResponse.json({
       success: true,

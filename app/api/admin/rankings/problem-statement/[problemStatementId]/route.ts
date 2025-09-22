@@ -32,7 +32,7 @@ export async function GET(
 
     // Get problem statement details
     const problemStatement = await ProblemStatement.findById(problemStatementId)
-      .select("title description")
+      .select("psNumber title description")
       .lean();
 
     if (!problemStatement) {
@@ -41,15 +41,6 @@ export async function GET(
         { status: 404 }
       );
     }
-
-    // Get all teams for this problem statement
-    const teams = await Team.find({
-      problemStatement: problemStatementId,
-      status: { $ne: "rejected" },
-    })
-      .select("teamName leader")
-      .populate("leader", "name email")
-      .lean();
 
     // Get all evaluators assigned to this problem statement
     const assignedEvaluators = await Admin.find({
@@ -60,11 +51,38 @@ export async function GET(
       .select("email")
       .lean();
 
+    // Only proceed if there are assigned evaluators
+    if (assignedEvaluators.length === 0) {
+      return NextResponse.json({
+        success: true,
+        problemStatement,
+        teams: [],
+        evaluatorRankings: [],
+        consensusAnalysis: [],
+        statistics: {
+          totalTeams: 0,
+          evaluatedTeams: 0,
+          averageRankings: 0,
+          conflictRate: 0,
+        },
+      });
+    }
+
     // Get all evaluations for this problem statement
     const evaluations = await Evaluation.find({
       problemStatementId: problemStatementId,
     })
       .populate("evaluatorId", "email")
+      .lean();
+
+    // Get all teams for this problem statement that have at least 1 task submission
+    const teams = await Team.find({
+      problemStatement: problemStatementId,
+      status: { $ne: "rejected" },
+      $expr: { $gte: [{ $size: "$tasks" }, 1] }, // Only teams with at least 1 task
+    })
+      .select("teamName leader tasks")
+      .populate("leader", "name email")
       .lean();
 
     // Build comparison matrix

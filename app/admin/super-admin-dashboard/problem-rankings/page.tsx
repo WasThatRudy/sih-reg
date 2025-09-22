@@ -18,6 +18,7 @@ import {
 
 interface ProblemStatementStats {
   _id: string;
+  psNumber: string;
   title: string;
   description: string;
   assignedEvaluators: number;
@@ -82,6 +83,7 @@ export default function ProblemRankingsOverview() {
   const filteredProblemStatements = problemStatements.filter(
     (ps) =>
       ps.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      ps.psNumber.toLowerCase().includes(searchTerm.toLowerCase()) ||
       ps.description.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
@@ -173,7 +175,7 @@ export default function ProblemRankingsOverview() {
           />
           <input
             type="text"
-            placeholder="Search problem statements..."
+            placeholder="Search by PS number, title, or description..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-10 pr-4 py-2 bg-gray-800/50 border border-gray-700 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-white placeholder-gray-400"
@@ -285,7 +287,7 @@ export default function ProblemRankingsOverview() {
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex-1">
                       <h3 className="text-lg font-display text-heading mb-2">
-                        {ps.title}
+                        {ps.psNumber} - {ps.title}
                       </h3>
                       {ps.description && (
                         <p className="text-gray-400 text-sm mb-3 line-clamp-2">

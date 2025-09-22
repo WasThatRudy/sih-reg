@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
       role: "evaluator",
       isActive: true,
     })
-      .populate("assignedProblemStatements", "title")
+      .populate("assignedProblemStatements", "psNumber title")
       .select("email assignedProblemStatements isActive createdAt")
       .lean();
 
@@ -41,6 +41,7 @@ export async function GET(request: NextRequest) {
         const assignedPS =
           evaluator.assignedProblemStatements as unknown as Array<{
             _id: string;
+            psNumber: string;
             title: string;
           }>;
 

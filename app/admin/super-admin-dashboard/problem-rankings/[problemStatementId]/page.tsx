@@ -14,6 +14,7 @@ import {
   Star,
   TrendingUp,
   AlertCircle,
+  FileText,
 } from "lucide-react";
 
 interface TeamConsensus {
@@ -61,6 +62,7 @@ interface EvaluatorRanking {
 interface ProblemStatementAnalysis {
   problemStatement: {
     _id: string;
+    psNumber: string;
     title: string;
     description?: string;
   };
@@ -219,7 +221,7 @@ export default function ProblemStatementDetail() {
             </button>
             <div>
               <h1 className="text-2xl font-display text-heading mb-1">
-                {data.problemStatement.title}
+                {data.problemStatement.psNumber} - {data.problemStatement.title}
               </h1>
               <p className="text-gray-400">
                 Ranking analysis across {data.statistics.totalEvaluators}{" "}
@@ -328,6 +330,25 @@ export default function ProblemStatementDetail() {
               {data.statistics.conflictingTeams}
             </p>
           </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.5 }}
+            className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl p-6"
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <FileText className="w-5 h-5 text-blue-400" />
+              <h3 className="text-sm font-display text-heading">Comments</h3>
+            </div>
+            <p className="text-2xl font-bold text-white">
+              {data.consensusAnalysis.reduce(
+                (total, team) =>
+                  total + team.rankings.filter((r) => r.comments).length,
+                0
+              )}
+            </p>
+          </motion.div>
         </div>
 
         {/* Content based on selected view */}
@@ -381,6 +402,10 @@ export default function ProblemStatementDetail() {
                         <div className="text-gray-400">
                           {team.consensus.evaluatorCount} evaluator(s)
                         </div>
+                        <div className="text-blue-400 text-xs">
+                          💬 {team.rankings.filter((r) => r.comments).length}{" "}
+                          comments
+                        </div>
                         {team.consensus.averageScore && (
                           <div className="text-blue-400">
                             Avg Score: {team.consensus.averageScore.toFixed(1)}
@@ -395,12 +420,24 @@ export default function ProblemStatementDetail() {
                     {team.rankings.map((ranking, rankIndex) => (
                       <div
                         key={rankIndex}
-                        className="p-3 bg-gray-700/50 rounded-lg"
+                        className={`p-3 rounded-lg border ${
+                          ranking.comments
+                            ? "bg-gray-700/50 border-blue-500/30"
+                            : "bg-gray-700/50 border-gray-600/50"
+                        }`}
                       >
                         <div className="flex items-center justify-between mb-1">
-                          <span className="text-gray-300 text-sm font-medium">
-                            {ranking.evaluatorEmail}
-                          </span>
+                          <div className="flex items-center gap-2">
+                            <span className="text-gray-300 text-sm font-medium">
+                              {ranking.evaluatorEmail}
+                            </span>
+                            {ranking.comments && (
+                              <div
+                                className="w-2 h-2 bg-blue-400 rounded-full"
+                                title="Has comments"
+                              ></div>
+                            )}
+                          </div>
                           {ranking.rank && (
                             <span className="text-blue-400 font-medium">
                               #{ranking.rank}
@@ -408,8 +445,18 @@ export default function ProblemStatementDetail() {
                           )}
                         </div>
                         {ranking.score && (
-                          <div className="text-xs text-gray-400">
+                          <div className="text-xs text-gray-400 mb-2">
                             Score: {ranking.score}/100
+                          </div>
+                        )}
+                        {ranking.comments && (
+                          <div className="mt-2 pt-2 border-t border-gray-600">
+                            <div className="text-xs text-gray-500 mb-1">
+                              💬 Evaluator Comments:
+                            </div>
+                            <div className="text-xs text-gray-300 leading-relaxed">
+                              {ranking.comments}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -474,93 +521,134 @@ export default function ProblemStatementDetail() {
             {data.evaluatorRankings.some(
               (er) => er.evaluation?.isFinalized
             ) && (
-              <div className="overflow-x-auto">
-                <table className="w-full border-collapse">
-                  <thead>
-                    <tr className="border-b border-gray-700">
-                      <th className="text-left p-3 text-gray-400 font-medium">
-                        Team
-                      </th>
-                      {data.evaluatorRankings
-                        .filter((er) => er.evaluation?.isFinalized)
-                        .map((evaluatorRanking) => (
-                          <th
-                            key={evaluatorRanking.evaluator._id}
-                            className="text-center p-3 text-gray-400 font-medium min-w-24"
-                          >
-                            {evaluatorRanking.evaluator.email.split("@")[0]}
-                          </th>
-                        ))}
-                      <th className="text-center p-3 text-gray-400 font-medium">
-                        Avg Rank
-                      </th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {data.consensusAnalysis.map((team) => (
-                      <tr
-                        key={team.team._id}
-                        className="border-b border-gray-800 hover:bg-gray-800/30"
-                      >
-                        <td className="p-3">
-                          <div className="text-white font-medium">
-                            {team.team.teamName}
-                          </div>
-                          <div className="text-gray-400 text-sm">
-                            {team.team.leader.name}
-                          </div>
-                        </td>
+              <div className="space-y-4">
+                {/* Instructions */}
+                <div className="bg-blue-500/10 border border-blue-500/30 rounded-lg p-3">
+                  <div className="flex items-center gap-2 text-blue-400 text-sm">
+                    <TrendingUp className="w-4 h-4" />
+                    <span className="font-medium">💡 Tip:</span>
+                    <span>
+                      Hover over rank numbers to view evaluator comments and
+                      detailed feedback
+                    </span>
+                  </div>
+                </div>
+
+                <div className="overflow-x-auto">
+                  <table className="w-full border-collapse">
+                    <thead>
+                      <tr className="border-b border-gray-700">
+                        <th className="text-left p-3 text-gray-400 font-medium">
+                          Team
+                        </th>
                         {data.evaluatorRankings
                           .filter((er) => er.evaluation?.isFinalized)
-                          .map((evaluatorRanking) => {
-                            const ranking = team.rankings.find(
-                              (r) =>
-                                r.evaluatorEmail ===
-                                evaluatorRanking.evaluator.email
-                            );
-                            return (
-                              <td
-                                key={evaluatorRanking.evaluator._id}
-                                className="text-center p-3"
-                              >
-                                {ranking?.rank ? (
-                                  <span
-                                    className={`px-2 py-1 rounded text-sm font-medium ${getRankColor(
-                                      ranking.rank
-                                    ).replace("border-", "border border-")}`}
-                                  >
-                                    #{ranking.rank}
-                                  </span>
-                                ) : (
-                                  <span className="text-gray-500">-</span>
-                                )}
-                              </td>
-                            );
-                          })}
-                        <td className="text-center p-3">
-                          {team.consensus.averageRank ? (
-                            <div className="flex flex-col items-center">
-                              <span className="text-white font-medium">
-                                #{team.consensus.averageRank.toFixed(1)}
-                              </span>
-                              <span
-                                className={`text-xs ${
-                                  getConflictColor(
-                                    team.consensus.conflictLevel
-                                  ).split(" ")[1]
-                                }`}
-                              >
-                                {team.consensus.conflictLevel}
-                              </span>
-                            </div>
-                          ) : (
-                            <span className="text-gray-500">-</span>
-                          )}
-                        </td>
+                          .map((evaluatorRanking) => (
+                            <th
+                              key={evaluatorRanking.evaluator._id}
+                              className="text-center p-3 text-gray-400 font-medium min-w-24"
+                            >
+                              {evaluatorRanking.evaluator.email.split("@")[0]}
+                            </th>
+                          ))}
+                        <th className="text-center p-3 text-gray-400 font-medium">
+                          Avg Rank
+                        </th>
                       </tr>
-                    ))}
-                  </tbody>
-                </table>
+                    </thead>
+                    <tbody>
+                      {data.consensusAnalysis.map((team) => (
+                        <tr
+                          key={team.team._id}
+                          className="border-b border-gray-800 hover:bg-gray-800/30"
+                        >
+                          <td className="p-3">
+                            <div className="text-white font-medium">
+                              {team.team.teamName}
+                            </div>
+                            <div className="text-gray-400 text-sm">
+                              {team.team.leader.name}
+                            </div>
+                          </td>
+                          {data.evaluatorRankings
+                            .filter((er) => er.evaluation?.isFinalized)
+                            .map((evaluatorRanking) => {
+                              const ranking = team.rankings.find(
+                                (r) =>
+                                  r.evaluatorEmail ===
+                                  evaluatorRanking.evaluator.email
+                              );
+                              return (
+                                <td
+                                  key={evaluatorRanking.evaluator._id}
+                                  className="text-center p-3"
+                                >
+                                  {ranking?.rank ? (
+                                    <div className="group relative">
+                                      <span
+                                        className={`px-2 py-1 rounded text-sm font-medium cursor-help ${getRankColor(
+                                          ranking.rank
+                                        ).replace(
+                                          "border-",
+                                          "border border-"
+                                        )}`}
+                                        title={
+                                          ranking.comments ||
+                                          "No comments provided"
+                                        }
+                                      >
+                                        #{ranking.rank}
+                                      </span>
+                                      {ranking.comments && (
+                                        <div className="invisible group-hover:visible absolute z-50 bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 p-3 bg-gray-900 border border-gray-600 rounded-lg text-xs text-gray-200 shadow-lg">
+                                          <div className="font-medium text-blue-400 mb-1">
+                                            💬{" "}
+                                            {
+                                              evaluatorRanking.evaluator.email.split(
+                                                "@"
+                                              )[0]
+                                            }
+                                            :
+                                          </div>
+                                          <div className="leading-relaxed">
+                                            {ranking.comments}
+                                          </div>
+                                          {/* Tooltip arrow */}
+                                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-900"></div>
+                                        </div>
+                                      )}
+                                    </div>
+                                  ) : (
+                                    <span className="text-gray-500">-</span>
+                                  )}
+                                </td>
+                              );
+                            })}
+                          <td className="text-center p-3">
+                            {team.consensus.averageRank ? (
+                              <div className="flex flex-col items-center">
+                                <span className="text-white font-medium">
+                                  #{team.consensus.averageRank.toFixed(1)}
+                                </span>
+                                <span
+                                  className={`text-xs ${
+                                    getConflictColor(
+                                      team.consensus.conflictLevel
+                                    ).split(" ")[1]
+                                  }`}
+                                >
+                                  {team.consensus.conflictLevel}
+                                </span>
+                              </div>
+                            ) : (
+                              <span className="text-gray-500">-</span>
+                            )}
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
               </div>
             )}
           </div>

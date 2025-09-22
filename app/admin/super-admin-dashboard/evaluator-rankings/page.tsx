@@ -13,6 +13,7 @@ import {
   TrendingUp,
   FileText,
   Eye,
+  Search,
 } from "lucide-react";
 
 interface EvaluatorProgress {
@@ -27,6 +28,7 @@ interface EvaluatorProgress {
   problemStatements: Array<{
     problemStatement: {
       _id: string;
+      psNumber: string;
       title: string;
     };
     totalTeams: number;
@@ -46,6 +48,7 @@ export default function EvaluatorRankingsOverview() {
   const router = useRouter();
   const [data, setData] = useState<EvaluatorRankingsData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
 
   const fetchEvaluatorRankings = useCallback(async () => {
     try {
@@ -79,6 +82,22 @@ export default function EvaluatorRankingsOverview() {
     }
     fetchEvaluatorRankings();
   }, [isSuperAdmin, router, fetchEvaluatorRankings]);
+
+  // Filter evaluators based on search term (PS number, email)
+  const filteredEvaluators =
+    data?.evaluators.filter((evaluator) => {
+      const searchLower = searchTerm.toLowerCase();
+
+      // Search by email
+      if (evaluator.email.toLowerCase().includes(searchLower)) {
+        return true;
+      }
+
+      // Search by PS numbers assigned to this evaluator
+      return evaluator.problemStatements.some((ps) =>
+        ps.problemStatement.psNumber.toLowerCase().includes(searchLower)
+      );
+    }) || [];
 
   const getProgressColor = (percentage: number) => {
     if (percentage >= 80) return "text-green-400 bg-green-400/20";
@@ -149,7 +168,10 @@ export default function EvaluatorRankingsOverview() {
 
           <div className="flex items-center gap-2 px-3 py-1 bg-blue-500/20 border border-blue-500/30 text-blue-400 rounded-lg">
             <Users className="w-4 h-4" />
-            {data.evaluators.length} evaluators
+            {searchTerm
+              ? `${filteredEvaluators.length} of ${data.evaluators.length}`
+              : data.evaluators.length}{" "}
+            evaluators
           </div>
         </div>
 
@@ -167,7 +189,7 @@ export default function EvaluatorRankingsOverview() {
               </h3>
             </div>
             <p className="text-2xl font-bold text-white">
-              {data.evaluators.length}
+              {filteredEvaluators.length}
             </p>
           </motion.div>
 
@@ -182,7 +204,7 @@ export default function EvaluatorRankingsOverview() {
               <h3 className="text-lg font-display text-heading">Completed</h3>
             </div>
             <p className="text-2xl font-bold text-white">
-              {data.evaluators.reduce(
+              {filteredEvaluators.reduce(
                 (sum, evaluator) => sum + evaluator.completedEvaluations,
                 0
               )}
@@ -200,7 +222,7 @@ export default function EvaluatorRankingsOverview() {
               <h3 className="text-lg font-display text-heading">Drafts</h3>
             </div>
             <p className="text-2xl font-bold text-white">
-              {data.evaluators.reduce(
+              {filteredEvaluators.reduce(
                 (sum, evaluator) => sum + evaluator.draftEvaluations,
                 0
               )}
@@ -221,14 +243,29 @@ export default function EvaluatorRankingsOverview() {
             </div>
             <p className="text-2xl font-bold text-white">
               {Math.round(
-                data.evaluators.reduce(
+                filteredEvaluators.reduce(
                   (sum, evaluator) => sum + evaluator.progressPercentage,
                   0
-                ) / data.evaluators.length
-              ) || 0}
+                ) / (filteredEvaluators.length || 1)
+              )}
               %
             </p>
           </motion.div>
+        </div>
+
+        {/* Search Box */}
+        <div className="relative">
+          <Search
+            className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"
+            size={20}
+          />
+          <input
+            type="text"
+            placeholder="Search by PS number or evaluator email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-10 pr-4 py-3 bg-gray-800/50 border border-gray-700 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-heading/50 focus:bg-gray-800/70 transition-colors"
+          />
         </div>
 
         {/* Evaluators List */}
@@ -237,118 +274,125 @@ export default function EvaluatorRankingsOverview() {
             Individual Evaluator Progress
           </h2>
 
-          <div className="space-y-4">
-            {data.evaluators.map((evaluator, index) => (
-              <motion.div
-                key={evaluator._id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ delay: 0.1 * index }}
-                className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 hover:border-gray-600 transition-colors"
-              >
-                <div className="flex items-center justify-between mb-4">
-                  <div className="flex items-center gap-4">
-                    <div className="w-12 h-12 bg-heading/20 rounded-full flex items-center justify-center">
-                      <span className="text-lg font-medium text-heading">
-                        {evaluator.email.charAt(0).toUpperCase()}
+          {filteredEvaluators.length === 0 ? (
+            <div className="text-center py-12">
+              <FileText className="mx-auto h-12 w-12 text-gray-400 mb-4" />
+              <h3 className="text-lg font-display text-heading mb-2">
+                No evaluators found
+              </h3>
+              <p className="text-gray-400">
+                {searchTerm
+                  ? "Try adjusting your search criteria."
+                  : "No evaluators available."}
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-4">
+              {filteredEvaluators.map((evaluator, index) => (
+                <motion.div
+                  key={evaluator._id}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.1 * index }}
+                  className="bg-gray-800/50 border border-gray-700 rounded-xl p-6 hover:border-gray-600 transition-colors"
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-4">
+                      <div className="w-12 h-12 bg-heading/20 rounded-full flex items-center justify-center">
+                        <span className="text-lg font-medium text-heading">
+                          {evaluator.email.charAt(0).toUpperCase()}
+                        </span>
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-display text-heading">
+                          {evaluator.email}
+                        </h3>
+                        <p className="text-gray-400 text-sm">
+                          Joined:{" "}
+                          {new Date(evaluator.createdAt).toLocaleDateString()}
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="flex items-center gap-4">
+                      {/* Progress */}
+                      <div className="text-right">
+                        <div
+                          className={`px-3 py-1 rounded text-sm font-medium ${getProgressColor(
+                            evaluator.progressPercentage
+                          )}`}
+                        >
+                          {evaluator.progressPercentage}% Complete
+                        </div>
+                        <p className="text-gray-400 text-xs mt-1">
+                          {evaluator.completedEvaluations}/
+                          {evaluator.totalAssignments} assignments
+                        </p>
+                      </div>
+
+                      {/* View Details Button */}
+                      <button
+                        onClick={() =>
+                          router.push(
+                            `/admin/super-admin-dashboard/evaluator-rankings/${evaluator._id}`
+                          )
+                        }
+                        className="px-4 py-2 bg-heading/20 border border-heading/30 text-heading rounded-lg hover:bg-heading/30 transition-colors flex items-center gap-2"
+                      >
+                        <Eye className="w-4 h-4" />
+                        View Details
+                      </button>
+                    </div>
+                  </div>
+
+                  {/* Problem Statements Summary */}
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div className="flex items-center gap-2 text-sm">
+                      <FileText className="w-4 h-4 text-blue-400" />
+                      <span className="text-gray-400">Assignments:</span>
+                      <span className="text-white font-medium">
+                        {evaluator.totalAssignments}
                       </span>
                     </div>
-                    <div>
-                      <h3 className="text-lg font-display text-heading">
-                        {evaluator.email}
-                      </h3>
-                      <p className="text-gray-400 text-sm">
-                        Joined:{" "}
-                        {new Date(evaluator.createdAt).toLocaleDateString()}
-                      </p>
+                    <div className="flex items-center gap-2 text-sm">
+                      <CheckCircle className="w-4 h-4 text-green-400" />
+                      <span className="text-gray-400">Completed:</span>
+                      <span className="text-white font-medium">
+                        {evaluator.completedEvaluations}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Clock className="w-4 h-4 text-yellow-400" />
+                      <span className="text-gray-400">Drafts:</span>
+                      <span className="text-white font-medium">
+                        {evaluator.draftEvaluations}
+                      </span>
                     </div>
                   </div>
 
-                  <div className="flex items-center gap-4">
-                    {/* Progress */}
-                    <div className="text-right">
-                      <div
-                        className={`px-3 py-1 rounded text-sm font-medium ${getProgressColor(
-                          evaluator.progressPercentage
-                        )}`}
-                      >
-                        {evaluator.progressPercentage}% Complete
-                      </div>
-                      <p className="text-gray-400 text-xs mt-1">
-                        {evaluator.completedEvaluations}/
-                        {evaluator.totalAssignments} assignments
-                      </p>
-                    </div>
-
-                    {/* View Details Button */}
-                    <button
-                      onClick={() =>
-                        router.push(
-                          `/admin/super-admin-dashboard/evaluator-rankings/${evaluator._id}`
-                        )
-                      }
-                      className="px-4 py-2 bg-heading/20 border border-heading/30 text-heading rounded-lg hover:bg-heading/30 transition-colors flex items-center gap-2"
-                    >
-                      <Eye className="w-4 h-4" />
-                      View Details
-                    </button>
-                  </div>
-                </div>
-
-                {/* Problem Statements Summary */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  <div className="flex items-center gap-2 text-sm">
-                    <FileText className="w-4 h-4 text-blue-400" />
-                    <span className="text-gray-400">Assignments:</span>
-                    <span className="text-white font-medium">
-                      {evaluator.totalAssignments}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <CheckCircle className="w-4 h-4 text-green-400" />
-                    <span className="text-gray-400">Completed:</span>
-                    <span className="text-white font-medium">
-                      {evaluator.completedEvaluations}
-                    </span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Clock className="w-4 h-4 text-yellow-400" />
-                    <span className="text-gray-400">Drafts:</span>
-                    <span className="text-white font-medium">
-                      {evaluator.draftEvaluations}
-                    </span>
-                  </div>
-                </div>
-
-                {/* Recent Problem Statements */}
-                <div className="mt-4">
-                  <h4 className="text-sm font-medium text-gray-300 mb-2">
-                    Problem Statements Status:
-                  </h4>
-                  <div className="flex flex-wrap gap-2">
-                    {evaluator.problemStatements
-                      .slice(0, 3)
-                      .map((ps, psIndex) => (
+                  {/* Recent Problem Statements */}
+                  <div className="mt-4">
+                    <h4 className="text-sm font-medium text-gray-300 mb-2">
+                      Problem Statements Status:
+                    </h4>
+                    <div className="flex flex-wrap gap-2">
+                      {evaluator.problemStatements.map((ps, psIndex) => (
                         <div
                           key={psIndex}
                           className="flex items-center gap-2 px-3 py-1 bg-gray-700/50 rounded-lg text-xs"
                         >
                           {getStatusIcon(ps)}
-                          <span className="text-gray-300 truncate max-w-32">
-                            {ps.problemStatement.title}
+                          <span className="text-gray-300">
+                            {ps.problemStatement.psNumber}
                           </span>
                         </div>
                       ))}
-                    {evaluator.problemStatements.length > 3 && (
-                      <div className="px-3 py-1 bg-gray-700/50 rounded-lg text-xs text-gray-400">
-                        +{evaluator.problemStatements.length - 3} more
-                      </div>
-                    )}
+                    </div>
                   </div>
-                </div>
-              </motion.div>
-            ))}
-          </div>
+                </motion.div>
+              ))}
+            </div>
+          )}
         </div>
       </div>
     </AdminLayout>

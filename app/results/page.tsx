@@ -2,12 +2,7 @@
 import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import Navbar from "@/components/Navbar";
-import {
-  Trophy,
-  Star,
-  CheckCircle,
-  Search,
-} from "lucide-react";
+import { Trophy, Star, CheckCircle, Search } from "lucide-react";
 
 interface SelectedTeam {
   _id: string;
@@ -133,7 +128,7 @@ export default function ResultsPage() {
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
-      
+
       {/* Hero Section */}
       <section className="py-20 px-6 bg-gradient-to-b from-background to-gray-900/50">
         <div className="max-w-7xl mx-auto text-center">
@@ -149,7 +144,8 @@ export default function ResultsPage() {
               </h1>
             </div>
             <p className="font-body text-xl text-subheading max-w-3xl mx-auto leading-relaxed">
-              Celebrating the exceptional teams selected in Smart India Hackathon 2025
+              Celebrating the exceptional teams selected in Smart India
+              Hackathon 2025
             </p>
           </motion.div>
 
@@ -161,7 +157,7 @@ export default function ResultsPage() {
               transition={{ duration: 0.8, delay: 0.3 }}
               className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-16 max-w-3xl mx-auto"
             >
-              <motion.div 
+              <motion.div
                 className="bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20 rounded-3xl p-10 hover:border-green-500/30 transition-all duration-500 hover:scale-105"
                 whileHover={{ y: -5 }}
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
@@ -174,13 +170,15 @@ export default function ResultsPage() {
                 <div className="text-4xl font-display text-green-400 mb-3 font-light">
                   {data.statistics.totalSelectedTeams}
                 </div>
-                <div className="text-gray-300 font-body text-lg">Selected Teams</div>
+                <div className="text-gray-300 font-body text-lg">
+                  Selected Teams
+                </div>
                 <div className="text-green-400/60 font-body text-sm mt-2">
                   🎉 Congratulations to all winners!
                 </div>
               </motion.div>
-              
-              <motion.div 
+
+              <motion.div
                 className="bg-gradient-to-br from-heading/10 to-heading/5 border border-heading/20 rounded-3xl p-10 hover:border-heading/30 transition-all duration-500 hover:scale-105"
                 whileHover={{ y: -5 }}
                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
@@ -193,7 +191,9 @@ export default function ResultsPage() {
                 <div className="text-4xl font-display text-heading mb-3 font-light">
                   {data.statistics.uniqueProblemStatements}
                 </div>
-                <div className="text-gray-300 font-body text-lg">Problem Statements</div>
+                <div className="text-gray-300 font-body text-lg">
+                  Problem Statements
+                </div>
                 <div className="text-heading/60 font-body text-sm mt-2">
                   💡 Diverse innovation domains
                 </div>
@@ -241,7 +241,7 @@ export default function ResultsPage() {
 
       {/* No Results */}
       {data && filteredTeams.length === 0 && (
-        <motion.div 
+        <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           className="text-center py-20"
@@ -252,7 +252,8 @@ export default function ResultsPage() {
               No Results Found
             </h3>
             <p className="text-gray-300 text-lg leading-relaxed">
-              Try adjusting your search terms to find what you&apos;re looking for.
+              Try adjusting your search terms to find what you&apos;re looking
+              for.
             </p>
             <button
               onClick={() => setSearchTerm("")}

@@ -1,335 +1,271 @@
-// "use client";
-// import { useState, useEffect } from "react";
-// import { motion } from "framer-motion";
-// import Navbar from "@/components/Navbar";
-// import {
-//   Trophy,
-//   Star,
-//   Users,
-//   Calendar,
-//   TrendingUp,
-//   CheckCircle,
-//   Search,
-//   Filter,
-// } from "lucide-react";
+"use client";
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import Navbar from "@/components/Navbar";
+import {
+  Trophy,
+  Star,
+  CheckCircle,
+  Search,
+} from "lucide-react";
 
-// interface SelectedTeam {
-//   _id: string;
-//   teamName: string;
-//   status: string;
-//   registrationDate: string;
-//   memberCount: number;
-//   leader: {
-//     name: string;
-//     email: string;
-//   };
-//   problemStatement: {
-//     psNumber: string;
-//     title: string;
-//     description?: string;
-//     domain?: string;
-//   };
-// }
+interface SelectedTeam {
+  _id: string;
+  teamName: string;
+  status: string;
+  registrationDate: string;
+  memberCount: number;
+  leader: {
+    name: string;
+    email: string;
+  };
+  problemStatement: {
+    psNumber: string;
+    title: string;
+    description?: string;
+    domain?: string;
+  };
+}
 
-// interface TeamsByPS {
-//   [psNumber: string]: {
-//     problemStatement: {
-//       psNumber: string;
-//       title: string;
-//       description?: string;
-//       domain?: string;
-//     };
-//     teams: SelectedTeam[];
-//   };
-// }
+interface ResultsData {
+  teams: SelectedTeam[];
+  statistics: {
+    totalSelectedTeams: number;
+    uniqueProblemStatements: number;
+  };
+}
 
-// interface ResultsData {
-//   teams: SelectedTeam[];
-//   teamsByPS: TeamsByPS;
-//   statistics: {
-//     totalSelectedTeams: number;
-//     uniqueProblemStatements: number;
-//   };
-// }
+const containerVariants = {
+  hidden: { opacity: 0 },
+  visible: {
+    opacity: 1,
+    transition: {
+      staggerChildren: 0.1,
+      delayChildren: 0.2,
+    },
+  },
+};
 
-// const containerVariants = {
-//   hidden: { opacity: 0 },
-//   visible: {
-//     opacity: 1,
-//     transition: {
-//       staggerChildren: 0.1,
-//       delayChildren: 0.2,
-//     },
-//   },
-// };
+const itemVariants = {
+  hidden: { opacity: 0, y: 20 },
+  visible: { opacity: 1, y: 0 },
+};
 
-// const itemVariants = {
-//   hidden: { opacity: 0, y: 20 },
-//   visible: { opacity: 1, y: 0 },
-// };
+// TeamCard Component
+function TeamCard({ team, index }: { team: SelectedTeam; index: number }) {
+  return (
+    <motion.div
+      variants={itemVariants}
+      className="bg-gradient-to-r from-gray-900/30 to-gray-800/20 border border-gray-700/30 rounded-xl p-6 hover:border-heading/30 transition-all duration-300 hover:bg-gray-800/40"
+    >
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-4">
+          <div className="bg-heading/20 p-2 rounded-lg min-w-[40px] h-[40px] flex items-center justify-center">
+            <span className="text-heading font-medium text-lg">
+              {index + 1}
+            </span>
+          </div>
+          <div>
+            <h3 className="font-display text-xl text-white font-light">
+              {team.teamName}
+            </h3>
+            <p className="text-gray-400 text-sm">Leader: {team.leader.name}</p>
+          </div>
+        </div>
+        <div className="bg-gradient-to-r from-blue-500/20 to-blue-400/10 border border-blue-500/30 rounded-lg px-3 py-1">
+          <span className="text-blue-400 font-medium text-sm">
+            PS {team.problemStatement.psNumber}
+          </span>
+        </div>
+      </div>
+    </motion.div>
+  );
+}
 
-// export default function ResultsPage() {
-//   const [data, setData] = useState<ResultsData | null>(null);
-//   const [loading, setLoading] = useState(true);
-//   const [viewMode, setViewMode] = useState<"grid" | "grouped">("grouped");
-//   const [searchTerm, setSearchTerm] = useState("");
-//   const [selectedDomain, setSelectedDomain] = useState<string>("all");
+export default function ResultsPage() {
+  const [data, setData] = useState<ResultsData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [searchTerm, setSearchTerm] = useState("");
 
-//   useEffect(() => {
-//     const fetchResults = async () => {
-//       try {
-//         const response = await fetch("/api/results");
-//         if (response.ok) {
-//           const results = await response.json();
-//           setData(results);
-//         }
-//       } catch (error) {
-//         console.error("Error fetching results:", error);
-//       } finally {
-//         setLoading(false);
-//       }
-//     };
+  useEffect(() => {
+    const fetchResults = async () => {
+      try {
+        const response = await fetch("/api/results");
+        if (response.ok) {
+          const results = await response.json();
+          setData(results);
+        }
+      } catch (error) {
+        console.error("Error fetching results:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-//     fetchResults();
-//   }, []);
+    fetchResults();
+  }, []);
 
-//   // Filter teams based on search and domain
-//   const filteredTeams =
-//     data?.teams.filter((team) => {
-//       const matchesSearch =
-//         searchTerm === "" ||
-//         team.teamName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-//         team.problemStatement.title
-//           .toLowerCase()
-//           .includes(searchTerm.toLowerCase()) ||
-//         team.problemStatement.psNumber
-//           .toLowerCase()
-//           .includes(searchTerm.toLowerCase()) ||
-//         team.leader.name.toLowerCase().includes(searchTerm.toLowerCase());
+  // Filter teams based on search
+  const filteredTeams =
+    data?.teams.filter((team) => {
+      const matchesSearch =
+        searchTerm === "" ||
+        team.teamName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        team.leader.name.toLowerCase().includes(searchTerm.toLowerCase());
 
-//       const matchesDomain =
-//         selectedDomain === "all" ||
-//         team.problemStatement.domain?.toLowerCase() ===
-//           selectedDomain.toLowerCase();
+      return matchesSearch;
+    }) || [];
 
-//       return matchesSearch && matchesDomain;
-//     }) || [];
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-heading mx-auto mb-4"></div>
+            <p className="text-text font-body text-lg">Loading results...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
-//   // Get unique domains for filter
-//   const domains = Array.from(
-//     new Set(
-//       data?.teams.map((team) => team.problemStatement.domain).filter(Boolean)
-//     )
-//   ).sort();
+  return (
+    <div className="min-h-screen bg-background">
+      <Navbar />
+      
+      {/* Hero Section */}
+      <section className="py-20 px-6 bg-gradient-to-b from-background to-gray-900/50">
+        <div className="max-w-7xl mx-auto text-center">
+          <motion.div
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8 }}
+          >
+            <div className="flex items-center justify-center gap-3 mb-6">
+              <Trophy className="w-12 h-12 text-heading" />
+              <h1 className="font-display text-5xl md:text-7xl font-light text-heading tracking-tight">
+                Results
+              </h1>
+            </div>
+            <p className="font-body text-xl text-subheading max-w-3xl mx-auto leading-relaxed">
+              Celebrating the exceptional teams selected in Smart India Hackathon 2025
+            </p>
+          </motion.div>
 
-//   if (loading) {
-//     return (
-//       <div className="min-h-screen bg-background">
-//         <Navbar />
-//         <div className="flex items-center justify-center min-h-[calc(100vh-80px)]">
-//           <div className="text-center">
-//             <div className="animate-spin rounded-full h-32 w-32 border-b-2 border-heading mx-auto mb-4"></div>
-//             <p className="text-text font-body text-lg">Loading results...</p>
-//           </div>
-//         </div>
-//       </div>
-//     );
-//   }
+          {/* Statistics */}
+          {data && (
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8, delay: 0.3 }}
+              className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-16 max-w-3xl mx-auto"
+            >
+              <motion.div 
+                className="bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20 rounded-3xl p-10 hover:border-green-500/30 transition-all duration-500 hover:scale-105"
+                whileHover={{ y: -5 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              >
+                <div className="flex items-center justify-center mb-6">
+                  <div className="bg-green-500/20 p-4 rounded-2xl">
+                    <CheckCircle className="w-10 h-10 text-green-400" />
+                  </div>
+                </div>
+                <div className="text-4xl font-display text-green-400 mb-3 font-light">
+                  {data.statistics.totalSelectedTeams}
+                </div>
+                <div className="text-gray-300 font-body text-lg">Selected Teams</div>
+                <div className="text-green-400/60 font-body text-sm mt-2">
+                  🎉 Congratulations to all winners!
+                </div>
+              </motion.div>
+              
+              <motion.div 
+                className="bg-gradient-to-br from-heading/10 to-heading/5 border border-heading/20 rounded-3xl p-10 hover:border-heading/30 transition-all duration-500 hover:scale-105"
+                whileHover={{ y: -5 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              >
+                <div className="flex items-center justify-center mb-6">
+                  <div className="bg-heading/20 p-4 rounded-2xl">
+                    <Star className="w-10 h-10 text-heading" />
+                  </div>
+                </div>
+                <div className="text-4xl font-display text-heading mb-3 font-light">
+                  {data.statistics.uniqueProblemStatements}
+                </div>
+                <div className="text-gray-300 font-body text-lg">Problem Statements</div>
+                <div className="text-heading/60 font-body text-sm mt-2">
+                  💡 Diverse innovation domains
+                </div>
+              </motion.div>
+            </motion.div>
+          )}
+        </div>
+      </section>
 
-//   return (
-//     <div className="min-h-screen bg-background">
-//       <Navbar />
+      {/* Search */}
+      {data && (
+        <section className="py-8 px-6 border-b border-gray-800/50">
+          <div className="max-w-4xl mx-auto">
+            <div className="relative">
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
+              <input
+                type="text"
+                placeholder="Search teams or leaders..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full pl-12 pr-4 py-4 bg-gray-900/50 border border-gray-700/50 rounded-2xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-heading/50 focus:border-heading/50 transition-all duration-300"
+              />
+            </div>
+          </div>
+        </section>
+      )}
 
-//       {/* Hero Section */}
-//       <section className="py-20 px-6 bg-gradient-to-b from-background to-gray-900/50">
-//         <div className="max-w-7xl mx-auto text-center">
-//           <motion.div
-//             initial={{ opacity: 0, y: 30 }}
-//             animate={{ opacity: 1, y: 0 }}
-//             transition={{ duration: 0.8 }}
-//           >
-//             <div className="flex items-center justify-center gap-3 mb-6">
-//               <Trophy className="w-12 h-12 text-heading" />
-//               <h1 className="font-display text-5xl md:text-7xl font-light text-heading tracking-tight">
-//                 Results
-//               </h1>
-//             </div>
-//             <p className="font-body text-xl text-subheading max-w-3xl mx-auto leading-relaxed">
-//               Celebrating the exceptional teams selected in Smart India
-//               Hackathon 2025
-//             </p>
-//           </motion.div>
+      {/* Results Section */}
+      {data && (
+        <section className="py-16 px-6">
+          <div className="max-w-4xl mx-auto">
+            <motion.div
+              variants={containerVariants}
+              initial="hidden"
+              animate="visible"
+              className="space-y-4"
+            >
+              {filteredTeams.map((team, index) => (
+                <TeamCard key={team._id} team={team} index={index} />
+              ))}
+            </motion.div>
+          </div>
+        </section>
+      )}
 
-//           {/* Statistics */}
-//           {data && (
-//             <motion.div
-//               initial={{ opacity: 0, y: 20 }}
-//               animate={{ opacity: 1, y: 0 }}
-//               transition={{ duration: 0.8, delay: 0.3 }}
-//               className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-16 max-w-3xl mx-auto"
-//             >
-//               <motion.div
-//                 className="bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20 rounded-3xl p-10 hover:border-green-500/30 transition-all duration-500 hover:scale-105"
-//                 whileHover={{ y: -5 }}
-//                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
-//               >
-//                 <div className="flex items-center justify-center mb-6">
-//                   <div className="bg-green-500/20 p-4 rounded-2xl">
-//                     <CheckCircle className="w-10 h-10 text-green-400" />
-//                   </div>
-//                 </div>
-//                 <div className="text-4xl font-display text-green-400 mb-3 font-light">
-//                   {data.statistics.totalSelectedTeams}
-//                 </div>
-//                 <div className="text-gray-300 font-body text-lg">
-//                   Selected Teams
-//                 </div>
-//                 <div className="text-green-400/60 font-body text-sm mt-2">
-//                   🎉 Congratulations to all winners!
-//                 </div>
-//               </motion.div>
-
-//               <motion.div
-//                 className="bg-gradient-to-br from-heading/10 to-heading/5 border border-heading/20 rounded-3xl p-10 hover:border-heading/30 transition-all duration-500 hover:scale-105"
-//                 whileHover={{ y: -5 }}
-//                 transition={{ type: "spring", stiffness: 300, damping: 20 }}
-//               >
-//                 <div className="flex items-center justify-center mb-6">
-//                   <div className="bg-heading/20 p-4 rounded-2xl">
-//                     <Star className="w-10 h-10 text-heading" />
-//                   </div>
-//                 </div>
-//                 <div className="text-4xl font-display text-heading mb-3 font-light">
-//                   {data.statistics.uniqueProblemStatements}
-//                 </div>
-//                 <div className="text-gray-300 font-body text-lg">
-//                   Problem Statements
-//                 </div>
-//                 <div className="text-heading/60 font-body text-sm mt-2">
-//                   💡 Diverse innovation domains
-//                 </div>
-//               </motion.div>
-//             </motion.div>
-//           )}
-//         </div>
-//       </section>
-
-//       {/* Filters and Controls */}
-//       {data && (
-//         <section className="py-12 px-6 bg-gradient-to-r from-gray-900/20 to-gray-800/20 border-y border-gray-800/50">
-//           <div className="max-w-7xl mx-auto">
-//             <div className="bg-gray-900/40 backdrop-blur-sm border border-gray-700/50 rounded-2xl p-6">
-//               <div className="flex flex-col lg:flex-row gap-6 items-center justify-between">
-//                 {/* Search */}
-//                 <div className="relative flex-1 max-w-lg">
-//                   <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-//                   <input
-//                     type="text"
-//                     placeholder="Search teams, problems, or leaders..."
-//                     value={searchTerm}
-//                     onChange={(e) => setSearchTerm(e.target.value)}
-//                     className="w-full pl-12 pr-4 py-4 bg-gray-800/50 border border-gray-600/50 rounded-xl text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-heading/50 focus:border-heading/50 transition-all duration-300"
-//                   />
-//                 </div>
-
-//                 <div className="flex items-center gap-4">
-//                   {/* Domain Filter */}
-//                   <div className="flex items-center gap-3 bg-gray-800/50 border border-gray-600/50 rounded-xl px-4 py-4">
-//                     <Filter className="w-5 h-5 text-gray-400" />
-//                     <select
-//                       value={selectedDomain}
-//                       onChange={(e) => setSelectedDomain(e.target.value)}
-//                       className="bg-transparent text-white focus:outline-none cursor-pointer"
-//                     >
-//                       <option value="all" className="bg-gray-800">
-//                         All Domains
-//                       </option>
-//                       {domains.map((domain) => (
-//                         <option
-//                           key={domain}
-//                           value={domain}
-//                           className="bg-gray-800"
-//                         >
-//                           {domain}
-//                         </option>
-//                       ))}
-//                     </select>
-//                   </div>
-
-//                   {/* View Mode Toggle */}
-//                   <div className="flex items-center gap-1 bg-gray-800/50 border border-gray-600/50 rounded-xl p-1">
-//                     <button
-//                       onClick={() => setViewMode("grouped")}
-//                       className={`px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 ${
-//                         viewMode === "grouped"
-//                           ? "bg-heading/20 text-heading border border-heading/30"
-//                           : "text-gray-400 hover:text-white hover:bg-gray-700/50"
-//                       }`}
-//                     >
-//                       By Problem
-//                     </button>
-//                     <button
-//                       onClick={() => setViewMode("grid")}
-//                       className={`px-4 py-3 rounded-lg text-sm font-medium transition-all duration-300 ${
-//                         viewMode === "grid"
-//                           ? "bg-heading/20 text-heading border border-heading/30"
-//                           : "text-gray-400 hover:text-white hover:bg-gray-700/50"
-//                       }`}
-//                     >
-//                       Grid View
-//                     </button>
-//                   </div>
-//                 </div>
-//               </div>
-//             </div>
-//           </div>
-//         </section>
-//       )}
-
-//       {/* Results Section */}
-//       {data && (
-//         <section className="py-16 px-6">
-//           <div className="max-w-7xl mx-auto">
-//             {viewMode === "grouped" ? (
-//               <GroupedView filteredTeams={filteredTeams} />
-//             ) : (
-//               <GridView filteredTeams={filteredTeams} />
-//             )}
-//           </div>
-//         </section>
-//       )}
-
-//       {/* No Results */}
-//       {data && filteredTeams.length === 0 && (
-//         <motion.div
-//           initial={{ opacity: 0, y: 20 }}
-//           animate={{ opacity: 1, y: 0 }}
-//           className="text-center py-20"
-//         >
-//           <div className="bg-gray-900/30 border border-gray-700/50 rounded-3xl p-16 max-w-md mx-auto">
-//             <div className="text-8xl mb-6 opacity-50">🔍</div>
-//             <h3 className="text-3xl font-display text-heading mb-4 font-light">
-//               No Results Found
-//             </h3>
-//             <p className="text-gray-300 text-lg leading-relaxed">
-//               Try adjusting your search terms or filter criteria to find what
-//               you&apos;re looking for.
-//             </p>
-//             <button
-//               onClick={() => {
-//                 setSearchTerm("");
-//                 setSelectedDomain("all");
-//               }}
-//               className="mt-6 px-6 py-3 bg-heading/20 hover:bg-heading/30 border border-heading/30 text-heading rounded-xl transition-all duration-300"
-//             >
-//               Clear Filters
-//             </button>
-//           </div>
-//         </motion.div>
-//       )}
-//     </div>
-//   );
-// }
+      {/* No Results */}
+      {data && filteredTeams.length === 0 && (
+        <motion.div 
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center py-20"
+        >
+          <div className="bg-gray-900/30 border border-gray-700/50 rounded-3xl p-16 max-w-md mx-auto">
+            <div className="text-8xl mb-6 opacity-50">🔍</div>
+            <h3 className="text-3xl font-display text-heading mb-4 font-light">
+              No Results Found
+            </h3>
+            <p className="text-gray-300 text-lg leading-relaxed">
+              Try adjusting your search terms to find what you&apos;re looking for.
+            </p>
+            <button
+              onClick={() => setSearchTerm("")}
+              className="mt-6 px-6 py-3 bg-heading/20 hover:bg-heading/30 border border-heading/30 text-heading rounded-xl transition-all duration-300"
+            >
+              Clear Search
+            </button>
+          </div>
+        </motion.div>
+      )}
+    </div>
+  );
+}
 
 // function GroupedView({ filteredTeams }: { filteredTeams: SelectedTeam[] }) {
 //   // Group filtered teams by PS number

@@ -2,9 +2,9 @@
 
 A comprehensive backend system for the Smart India Hackathon (SIH) registration portal built with Next.js API Routes, MongoDB, Firebase Authentication, and Cloudinary for file storage
 
-##🏗️ Architecture Overview
+## 🏗️ Architecture Overview
 
-## Tech Stack
+### Tech Stack
 
 - **Framework**: Next.js 15 with App Router
 - **Database**: MongoDB with Mongoose ODM

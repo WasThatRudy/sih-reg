@@ -53,6 +53,18 @@ export default function Navbar() {
                 transition={{ type: "spring", stiffness: 400, damping: 17 }}
               >
                 <Link
+                  href="/results"
+                  className="text-gray-300 hover:text-green-400 transition-colors duration-300 tracking-wide font-body text-sm"
+                >
+                  Results
+                </Link>
+              </motion.div>
+
+              <motion.div
+                whileHover={{ y: -1 }}
+                transition={{ type: "spring", stiffness: 400, damping: 17 }}
+              >
+                <Link
                   href={hasTeam ? "/team-info" : "/registration"}
                   className={`${
                     hasTeam
@@ -175,6 +187,20 @@ export default function Navbar() {
                       className="block text-gray-300 hover:text-subheading transition-colors duration-300 tracking-wide font-body text-lg py-2"
                     >
                       Problem Statements
+                    </Link>
+                  </motion.div>
+
+                  <motion.div
+                    initial={{ opacity: 0, x: 20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: 0.15, duration: 0.4 }}
+                  >
+                    <Link
+                      href="/results"
+                      onClick={() => setIsMobileMenuOpen(false)}
+                      className="block text-gray-300 hover:text-green-400 transition-colors duration-300 tracking-wide font-body text-lg py-2"
+                    >
+                      Results
                     </Link>
                   </motion.div>
 

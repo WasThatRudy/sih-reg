@@ -1,21 +1,21 @@
-'use client';
-import { motion } from 'framer-motion';
-import Link from 'next/link';
-import { useAuth } from '@/lib/context/AuthContext';
+"use client";
+import { motion } from "framer-motion";
+import Link from "next/link";
+import { useAuth } from "@/lib/context/AuthContext";
 
 export default function CallToAction() {
   const { user, hasTeam } = useAuth();
 
   const getJourneyLink = () => {
-    if (!user) return '/login';
-    if (hasTeam) return '/team-info';
-    return '/registration';
+    if (!user) return "/login";
+    if (hasTeam) return "/team-info";
+    return "/registration";
   };
 
   const getJourneyText = () => {
-    if (!user) return 'Start Your Journey';
-    if (hasTeam) return 'Continue Journey';
-    return 'Join the Challenge';
+    if (!user) return "Start Your Journey";
+    if (hasTeam) return "Continue Journey";
+    return "Join the Challenge";
   };
   return (
     <section className="py-24 px-6 bg-background relative overflow-hidden">
@@ -37,7 +37,7 @@ export default function CallToAction() {
           viewport={{ once: true }}
           transition={{ duration: 0.8 }}
         >
-          <motion.h2 
+          <motion.h2
             className="font-display text-4xl md:text-6xl font-light mb-8 tracking-tight leading-tight"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -48,26 +48,28 @@ export default function CallToAction() {
             <br />
             <span className="text-subheading">Innovate?</span>
           </motion.h2>
-          
-          <motion.p 
+
+          <motion.p
             className="font-body text-lg text-gray-400 mb-12 max-w-2xl mx-auto font-light leading-relaxed tracking-wide"
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
             transition={{ duration: 0.8, delay: 0.4 }}
           >
-            Join thousands of innovators across India. Your next big idea could change the world.
+            Join thousands of innovators across India. Your next big idea could
+            change the world.
           </motion.p>
         </motion.div>
 
         <motion.div
+          className="flex flex-col sm:flex-row gap-6 justify-center items-center"
           initial={{ opacity: 0, y: 30 }}
           whileInView={{ opacity: 1, y: 0 }}
           viewport={{ once: true }}
           transition={{ duration: 0.8, delay: 0.6 }}
         >
           <Link href={getJourneyLink()}>
-            <motion.button 
+            <motion.button
               className="group relative px-12 py-5 bg-gradient-to-r from-heading to-heading/80 text-white rounded-full text-lg font-medium overflow-hidden shadow-2xl tracking-wide"
               whileHover={{ scale: 1.05, y: -2 }}
               whileTap={{ scale: 0.95 }}
@@ -81,16 +83,56 @@ export default function CallToAction() {
               />
               <span className="relative flex items-center justify-center gap-3 font-body">
                 {getJourneyText()}
-                <motion.svg 
-                  className="w-5 h-5" 
-                  fill="none" 
-                  stroke="currentColor" 
+                <motion.svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
                   viewBox="0 0 24 24"
                   initial={{ x: 0 }}
                   whileHover={{ x: 5 }}
                   transition={{ duration: 0.3 }}
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M17 8l4 4m0 0l-4 4m4-4H3" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M17 8l4 4m0 0l-4 4m4-4H3"
+                  />
+                </motion.svg>
+              </span>
+            </motion.button>
+          </Link>
+
+          <Link href="/results">
+            <motion.button
+              className="group relative px-10 py-5 bg-transparent border-2 border-green-500/50 text-green-400 rounded-full text-lg font-medium overflow-hidden shadow-lg tracking-wide hover:bg-green-500/10 transition-colors duration-300"
+              whileHover={{ scale: 1.05, y: -2 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400, damping: 17 }}
+            >
+              <span className="relative flex items-center justify-center gap-3 font-body">
+                🏆 View Results
+                <motion.svg
+                  className="w-5 h-5"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  initial={{ x: 0 }}
+                  whileHover={{ x: 5 }}
+                  transition={{ duration: 0.3 }}
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                  />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                  />
                 </motion.svg>
               </span>
             </motion.button>

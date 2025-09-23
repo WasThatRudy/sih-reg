@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { verifyAdminAuth } from "@/lib/middleware/adminAuth";
 import { Team } from "@/models/Team";
+import { sendEmail } from "@/lib/utils/email";
 import dbConnect from "@/lib/mongodb";
 
 // PATCH /api/admin/teams/[teamId]/status - Update team status
@@ -22,7 +23,8 @@ export async function PATCH(
 
     await dbConnect();
 
-    const { status } = await request.json();
+    const { status, sendCongratulationsEmail, teamName, problemStatement } =
+      await request.json();
 
     // Validate status
     const validStatuses = [
@@ -51,6 +53,102 @@ export async function PATCH(
         { success: false, error: "Team not found" },
         { status: 404 }
       );
+    }
+
+    // Send congratulations email if requested and status is "selected"
+    if (
+      sendCongratulationsEmail &&
+      status === "selected" &&
+      updatedTeam.leader
+    ) {
+      try {
+        const leader = updatedTeam.leader as unknown as {
+          name: string;
+          email: string;
+        }; // Type assertion for populated field
+        const congratulationsHTML = `
+          <!DOCTYPE html>
+          <html>
+          <head>
+            <meta charset="utf-8">
+            <meta name="viewport" content="width=device-width, initial-scale=1.0">
+            <title>Congratulations - Team Selected!</title>
+            <style>
+              body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+              .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+              .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
+              .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+              .highlight { color: #667eea; font-weight: bold; }
+              .button { display: inline-block; background: #667eea; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+              .footer { text-align: center; margin-top: 30px; color: #666; font-size: 14px; }
+              .emoji { font-size: 24px; }
+            </style>
+          </head>
+          <body>
+            <div class="container">
+              <div class="header">
+                <div class="emoji">🎉</div>
+                <h1>Congratulations!</h1>
+                <h2>Your Team Has Been Selected!</h2>
+              </div>
+              <div class="content">
+                <p>Dear <span class="highlight">${leader.name}</span>,</p>
+                
+                <p>We are thrilled to inform you that your team <span class="highlight">"${
+                  teamName || updatedTeam.teamName
+                }"</span> has been <strong>selected</strong> for the next round!</p>
+                
+                ${
+                  problemStatement
+                    ? `<p>Your innovative solution for <span class="highlight">"${problemStatement}"</span> impressed our evaluators.</p>`
+                    : ""
+                }
+                
+                <p><strong>🏆 What this means:</strong></p>
+                <ul>
+                  <li>✅ Your team has successfully passed the evaluation round</li>
+                  <li>🚀 You're now eligible for the next phase of the competition</li>
+                  <li>💡 Your hard work and creativity have paid off!</li>
+                </ul>
+                
+                <p><strong>📋 Next Steps:</strong></p>
+                <ul>
+                  <li>Keep an eye on your email for further instructions</li>
+                  <li>Stay tuned for upcoming deadlines and requirements</li>
+                  <li>Continue collaborating with your team members</li>
+                </ul>
+                
+                <div style="text-align: center; margin: 30px 0;">
+                  <p style="font-size: 18px; font-weight: bold; color: #667eea;">🌟 Well done, and best of luck for the next round! 🌟</p>
+                </div>
+                
+                <p>If you have any questions, please don't hesitate to reach out to us.</p>
+                
+                <p>Warm regards,<br>
+                <strong>SIH Admin Team</strong></p>
+              </div>
+              <div class="footer">
+                <p>This is an automated message. Please do not reply to this email.</p>
+              </div>
+            </div>
+          </body>
+          </html>
+        `;
+
+        await sendEmail({
+          to: leader.email,
+          subject: `🎉 Congratulations! Team "${
+            teamName || updatedTeam.teamName
+          }" Selected!`,
+          html: congratulationsHTML,
+          text: `Congratulations! Your team "${
+            teamName || updatedTeam.teamName
+          }" has been selected for the next round. Keep an eye on your email for further instructions.`,
+        });
+      } catch (emailError) {
+        console.error("Failed to send congratulations email:", emailError);
+        // Don't fail the whole request if email fails
+      }
     }
 
     return NextResponse.json({

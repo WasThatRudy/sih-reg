@@ -81,7 +81,7 @@ export async function GET(
       status: { $ne: "rejected" },
       $expr: { $gte: [{ $size: "$tasks" }, 1] }, // Only teams with at least 1 task
     })
-      .select("teamName leader tasks")
+      .select("teamName leader tasks status")
       .populate("leader", "name email")
       .lean();
 

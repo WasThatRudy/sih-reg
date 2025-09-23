@@ -21,6 +21,7 @@ interface TeamConsensus {
   team: {
     _id: string;
     teamName: string;
+    status: "registered" | "selected" | "rejected" | "finalist";
     leader: {
       name: string;
       email: string;
@@ -87,6 +88,8 @@ export default function ProblemStatementDetail() {
   const [selectedView, setSelectedView] = useState<"consensus" | "comparison">(
     "consensus"
   );
+  const [selectingTeamId, setSelectingTeamId] = useState<string | null>(null);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const fetchProblemStatementAnalysis = useCallback(async () => {
     try {
@@ -125,6 +128,83 @@ export default function ProblemStatementDetail() {
     }
     fetchProblemStatementAnalysis();
   }, [isSuperAdmin, router, fetchProblemStatementAnalysis]);
+
+  const selectTeam = async (
+    teamId: string,
+    teamName: string,
+    leaderEmail: string
+  ) => {
+    setSelectingTeamId(teamId);
+    try {
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        router.push("/admin/login");
+        return;
+      }
+
+      const response = await fetch(`/api/admin/teams/${teamId}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          status: "selected",
+          sendCongratulationsEmail: true,
+          teamName: teamName,
+          problemStatement: data?.problemStatement?.title,
+        }),
+      });
+
+      if (response.ok) {
+        // Update the local data
+        setData((prevData) => {
+          if (!prevData) return prevData;
+
+          return {
+            ...prevData,
+            consensusAnalysis: prevData.consensusAnalysis.map((team) =>
+              team.team._id === teamId
+                ? { ...team, team: { ...team.team, status: "selected" } }
+                : team
+            ),
+          };
+        });
+        setSuccessMessage(
+          `🎉 Team "${teamName}" has been selected! Congratulations email sent to ${leaderEmail}`
+        );
+        setTimeout(() => setSuccessMessage(null), 5000);
+      } else if (response.status === 403) {
+        router.push("/admin");
+      } else {
+        console.error("Failed to select team");
+        setSuccessMessage("❌ Failed to select team. Please try again.");
+        setTimeout(() => setSuccessMessage(null), 3000);
+      }
+    } catch (error) {
+      console.error("Error selecting team:", error);
+      setSuccessMessage("❌ Error selecting team. Please try again.");
+      setTimeout(() => setSuccessMessage(null), 3000);
+    } finally {
+      setSelectingTeamId(null);
+    }
+  };
+
+  const getStatusColor = (
+    status: "registered" | "selected" | "rejected" | "finalist"
+  ) => {
+    switch (status) {
+      case "selected":
+        return "bg-green-500/20 text-green-400 border-green-500/30";
+      case "finalist":
+        return "bg-purple-500/20 text-purple-400 border-purple-500/30";
+      case "rejected":
+        return "bg-red-500/20 text-red-400 border-red-500/30";
+      case "registered":
+      default:
+        return "bg-blue-500/20 text-blue-400 border-blue-500/30";
+    }
+  };
 
   const getConflictColor = (level: "low" | "medium" | "high") => {
     switch (level) {
@@ -255,6 +335,21 @@ export default function ProblemStatementDetail() {
           </div>
         </div>
 
+        {/* Success Message */}
+        {successMessage && (
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -20 }}
+            className="bg-green-500/20 border border-green-500/30 text-green-400 px-6 py-4 rounded-lg shadow-lg"
+          >
+            <div className="flex items-center gap-3">
+              <CheckCircle className="w-5 h-5 text-green-400" />
+              <span className="font-medium">{successMessage}</span>
+            </div>
+          </motion.div>
+        )}
+
         {/* Statistics */}
         <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
           <motion.div
@@ -367,8 +462,8 @@ export default function ProblemStatementDetail() {
                   transition={{ delay: 0.1 * index }}
                   className="bg-gray-800/50 border border-gray-700 rounded-xl p-6"
                 >
-                  <div className="flex items-center justify-between mb-4">
-                    <div className="flex items-center gap-4">
+                  <div className="flex flex-col lg:flex-row lg:items-center justify-between mb-4 gap-4">
+                    <div className="flex items-center gap-4 flex-1 min-w-0">
                       {team.consensus.averageRank && (
                         <div
                           className={`flex items-center gap-2 px-3 py-2 rounded-lg border text-sm font-medium ${getRankColor(
@@ -379,18 +474,55 @@ export default function ProblemStatementDetail() {
                           <span>#{Math.round(team.consensus.averageRank)}</span>
                         </div>
                       )}
-                      <div>
-                        <h3 className="text-lg font-display text-heading">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="text-lg font-display text-heading truncate">
                           {team.team.teamName}
                         </h3>
-                        <p className="text-gray-400 text-sm">
+                        <p className="text-gray-400 text-sm truncate">
                           Leader: {team.team.leader.name} (
                           {team.team.leader.email})
                         </p>
                       </div>
                     </div>
 
-                    <div className="flex items-center gap-4">
+                    <div className="flex flex-wrap items-center gap-3">
+                      {/* Team Status Display */}
+                      <div
+                        className={`px-3 py-1 rounded text-xs border font-medium ${getStatusColor(
+                          team.team.status
+                        )}`}
+                      >
+                        {team.team.status}
+                      </div>
+
+                      {/* Select Team Button - Only show if not already selected */}
+                      {team.team.status !== "selected" &&
+                        team.team.status !== "finalist" && (
+                          <button
+                            onClick={() =>
+                              selectTeam(
+                                team.team._id,
+                                team.team.teamName,
+                                team.team.leader.email
+                              )
+                            }
+                            disabled={selectingTeamId === team.team._id}
+                            className="px-4 py-2 bg-green-600 hover:bg-green-700 disabled:bg-green-800 disabled:opacity-50 text-white text-xs font-medium rounded-lg transition-colors flex items-center gap-2"
+                          >
+                            {selectingTeamId === team.team._id ? (
+                              <>
+                                <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                                Selecting...
+                              </>
+                            ) : (
+                              <>
+                                <CheckCircle className="w-3 h-3" />
+                                Select Team
+                              </>
+                            )}
+                          </button>
+                        )}
+
                       <div
                         className={`px-3 py-1 rounded text-xs border ${getConflictColor(
                           team.consensus.conflictLevel
@@ -398,6 +530,7 @@ export default function ProblemStatementDetail() {
                       >
                         {team.consensus.conflictLevel} conflict
                       </div>
+
                       <div className="text-right text-sm">
                         <div className="text-gray-400">
                           {team.consensus.evaluatorCount} evaluator(s)
@@ -554,6 +687,9 @@ export default function ProblemStatementDetail() {
                         <th className="text-center p-3 text-gray-400 font-medium">
                           Avg Rank
                         </th>
+                        <th className="text-center p-3 text-gray-400 font-medium">
+                          Action
+                        </th>
                       </tr>
                     </thead>
                     <tbody>
@@ -642,6 +778,37 @@ export default function ProblemStatementDetail() {
                               </div>
                             ) : (
                               <span className="text-gray-500">-</span>
+                            )}
+                          </td>
+                          <td className="text-center p-3">
+                            {team.team.status === "selected" ? (
+                              <div className="flex items-center justify-center gap-2 text-green-400">
+                                <CheckCircle className="w-5 h-5" />
+                                <span className="text-sm font-medium">
+                                  Selected
+                                </span>
+                              </div>
+                            ) : (
+                              <button
+                                onClick={() =>
+                                  selectTeam(
+                                    team.team._id,
+                                    team.team.teamName,
+                                    team.team.leader.email
+                                  )
+                                }
+                                disabled={selectingTeamId === team.team._id}
+                                className="px-4 py-2 bg-green-500/20 hover:bg-green-500/30 border border-green-500/30 text-green-400 rounded-lg transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed text-sm font-medium"
+                              >
+                                {selectingTeamId === team.team._id ? (
+                                  <div className="flex items-center gap-2">
+                                    <div className="w-4 h-4 border-2 border-green-400 border-t-transparent rounded-full animate-spin"></div>
+                                    Selecting...
+                                  </div>
+                                ) : (
+                                  "Select Team"
+                                )}
+                              </button>
                             )}
                           </td>
                         </tr>

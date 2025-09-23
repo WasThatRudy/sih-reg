@@ -69,7 +69,14 @@ function TeamCard({ team, index }: { team: SelectedTeam; index: number }) {
         </div>
         <div className="bg-gradient-to-r from-blue-500/20 to-blue-400/10 border border-blue-500/30 rounded-lg px-3 py-1">
           <span className="text-blue-400 font-medium text-sm">
-            PS {team.problemStatement.psNumber}
+            PS{" "}
+            {(() => {
+              const psNumbers = team.problemStatement.psNumber.split("/");
+              if (psNumbers.length <= 3) {
+                return psNumbers.join("/");
+              }
+              return psNumbers.slice(0, 3).join("/") + "/...";
+            })()}
           </span>
         </div>
       </div>

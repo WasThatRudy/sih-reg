@@ -61,10 +61,31 @@ export async function GET(request: NextRequest) {
       },
     ]);
 
-    // Create a map for quick lookups
+    // Get selected teams count for all problem statements
+    const selectedTeamCounts = await Team.aggregate([
+      {
+        $match: {
+          status: { $in: ["selected", "finalist"] },
+          $expr: { $gte: [{ $size: "$tasks" }, 1] }, // Only teams with at least 1 task
+        },
+      },
+      {
+        $group: {
+          _id: "$problemStatement",
+          selectedCount: { $sum: 1 },
+        },
+      },
+    ]);
+
+    // Create maps for quick lookups
     const teamCountMap = new Map();
     teamCounts.forEach((tc) => {
       teamCountMap.set(tc._id.toString(), tc.count);
+    });
+
+    const selectedTeamCountMap = new Map();
+    selectedTeamCounts.forEach((stc) => {
+      selectedTeamCountMap.set(stc._id.toString(), stc.selectedCount);
     });
 
     // Calculate statistics for each problem statement
@@ -92,8 +113,9 @@ export async function GET(request: NextRequest) {
         // Calculate conflicts (simplified - teams with high ranking variance)
         const conflictingTeams = calculateConflicts(psEvaluations);
 
-        // Get total teams
+        // Get total teams and selected teams
         const totalTeams = teamCountMap.get(psId) || 0;
+        const selectedTeams = selectedTeamCountMap.get(psId) || 0;
 
         return {
           _id: ps._id,
@@ -103,6 +125,7 @@ export async function GET(request: NextRequest) {
           assignedEvaluators,
           completedEvaluations,
           totalTeams,
+          selectedTeams,
           conflictingTeams,
           isActive: true,
         };

@@ -164,6 +164,7 @@ export async function GET(
         team: {
           _id: team._id,
           teamName: team.teamName,
+          status: team.status,
           leader: team.leader,
         },
         rankings: teamRankings,

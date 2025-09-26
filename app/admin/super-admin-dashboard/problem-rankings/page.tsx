@@ -11,9 +11,12 @@ import {
   CheckCircle,
   AlertTriangle,
   FileText,
-  Eye,
   TrendingUp,
   Search,
+  ChevronDown,
+  ChevronUp,
+  Trophy,
+  Star,
 } from "lucide-react";
 
 interface ProblemStatementStats {
@@ -24,8 +27,51 @@ interface ProblemStatementStats {
   assignedEvaluators: number;
   completedEvaluations: number;
   totalTeams: number;
+  selectedTeams: number;
   conflictingTeams: number;
   isActive: boolean;
+}
+
+interface TeamConsensus {
+  team: {
+    _id: string;
+    teamName: string;
+    status: "registered" | "selected" | "rejected" | "finalist";
+    leader: {
+      name: string;
+      email: string;
+    };
+  };
+  rankings: Array<{
+    evaluatorEmail: string;
+    rank?: number;
+    score?: number;
+    comments?: string;
+  }>;
+  consensus: {
+    averageRank: number | null;
+    averageScore: number | null;
+    rankStandardDeviation: number | null;
+    conflictLevel: "low" | "medium" | "high";
+    evaluatorCount: number;
+  };
+}
+
+interface ProblemStatementDetails {
+  problemStatement: {
+    _id: string;
+    psNumber: string;
+    title: string;
+    description?: string;
+  };
+  statistics: {
+    totalTeams: number;
+    totalEvaluators: number;
+    completedEvaluations: number;
+    pendingEvaluations: number;
+    conflictingTeams: number;
+  };
+  consensusAnalysis: TeamConsensus[];
 }
 
 export default function ProblemRankingsOverview() {
@@ -37,6 +83,14 @@ export default function ProblemRankingsOverview() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState("");
+  const [expandedProblemStatements, setExpandedProblemStatements] = useState<
+    Set<string>
+  >(new Set());
+  const [detailsData, setDetailsData] = useState<
+    Map<string, ProblemStatementDetails>
+  >(new Map());
+  const [loadingDetails, setLoadingDetails] = useState<Set<string>>(new Set());
+  const [selectingTeamId, setSelectingTeamId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!isSuperAdmin) {
@@ -101,6 +155,129 @@ export default function ProblemRankingsOverview() {
     if (percentage > 20) return "text-red-400";
     if (percentage > 10) return "text-yellow-400";
     return "text-green-400";
+  };
+
+  const fetchProblemStatementDetails = async (problemStatementId: string) => {
+    try {
+      setLoadingDetails(prev => new Set(prev).add(problemStatementId));
+
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        router.push("/admin/login");
+        return;
+      }
+
+      const response = await fetch(
+        `/api/admin/rankings/problem-statement/${problemStatementId}`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+
+      if (!response.ok) {
+        if (response.status === 403) {
+          router.push("/admin");
+          return;
+        }
+        throw new Error("Failed to fetch problem statement details");
+      }
+
+      const data = await response.json();
+      setDetailsData(prev => new Map(prev).set(problemStatementId, data));
+    } catch (err) {
+      console.error("Error fetching problem statement details:", err);
+    } finally {
+      setLoadingDetails(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(problemStatementId);
+        return newSet;
+      });
+    }
+  };
+
+  const toggleExpanded = (problemStatementId: string) => {
+    const isExpanded = expandedProblemStatements.has(problemStatementId);
+    
+    if (isExpanded) {
+      // Collapse
+      setExpandedProblemStatements(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(problemStatementId);
+        return newSet;
+      });
+    } else {
+      // Expand
+      setExpandedProblemStatements(prev => new Set(prev).add(problemStatementId));
+      
+      // Fetch details if not already fetched
+      if (!detailsData.has(problemStatementId)) {
+        fetchProblemStatementDetails(problemStatementId);
+      }
+    }
+  };
+
+  const selectTeam = async (teamId: string) => {
+    setSelectingTeamId(teamId);
+    try {
+      const token = localStorage.getItem("adminToken");
+      if (!token) {
+        router.push("/admin/login");
+        return;
+      }
+
+      const response = await fetch(`/api/admin/teams/${teamId}/status`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ status: "selected" }),
+      });
+
+      if (!response.ok) {
+        throw new Error("Failed to select team");
+      }
+
+      // Refresh all expanded problem statements to show updated status
+      for (const psId of expandedProblemStatements) {
+        await fetchProblemStatementDetails(psId);
+      }
+    } catch (error) {
+      console.error("Error selecting team:", error);
+    } finally {
+      setSelectingTeamId(null);
+    }
+  };
+
+  // Helper functions for styling
+
+  const getRankIcon = (rank: number) => {
+    switch (rank) {
+      case 1:
+        return <Trophy className="w-4 h-4 text-yellow-400" />;
+      case 2:
+      case 3:
+        return <Star className="w-4 h-4 text-gray-400" />;
+      default:
+        return (
+          <span className="w-4 h-4 text-center text-xs font-bold text-gray-500">
+            {rank}
+          </span>
+        );
+    }
+  };
+
+  const getRankColor = (rank: number) => {
+    switch (rank) {
+      case 1:
+        return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+      case 2:
+        return "bg-gray-400/20 text-gray-300 border-gray-400/30";
+      case 3:
+        return "bg-amber-600/20 text-amber-500 border-amber-600/30";
+      default:
+        return "bg-blue-500/20 text-blue-400 border-blue-500/30";
+    }
   };
 
   if (loading) {
@@ -183,7 +360,7 @@ export default function ProblemRankingsOverview() {
         </div>
 
         {/* Summary Stats */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -252,6 +429,21 @@ export default function ProblemRankingsOverview() {
             </div>
             <p className="text-2xl font-bold text-white">
               {problemStatements.reduce((sum, ps) => sum + ps.totalTeams, 0)}
+            </p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.4 }}
+            className="bg-gray-900/50 backdrop-blur-sm border border-gray-800 rounded-2xl p-6"
+          >
+            <div className="flex items-center gap-3 mb-2">
+              <CheckCircle className="w-5 h-5 text-green-400" />
+              <h3 className="text-lg font-display text-heading">Selected Teams</h3>
+            </div>
+            <p className="text-2xl font-bold text-white">
+              {problemStatements.reduce((sum, ps) => sum + ps.selectedTeams, 0)}
             </p>
           </motion.div>
         </div>
@@ -324,21 +516,21 @@ export default function ProblemRankingsOverview() {
                       )}
 
                       <button
-                        onClick={() =>
-                          router.push(
-                            `/admin/super-admin-dashboard/problem-rankings/${ps._id}`
-                          )
-                        }
+                        onClick={() => toggleExpanded(ps._id)}
                         className="px-4 py-2 bg-heading/20 border border-heading/30 text-heading rounded-lg hover:bg-heading/30 transition-colors flex items-center gap-2"
                       >
-                        <Eye className="w-4 h-4" />
-                        Analyze
+                        {expandedProblemStatements.has(ps._id) ? (
+                          <ChevronUp className="w-4 h-4" />
+                        ) : (
+                          <ChevronDown className="w-4 h-4" />
+                        )}
+                        {expandedProblemStatements.has(ps._id) ? "Collapse" : "View Rankings"}
                       </button>
                     </div>
                   </div>
 
                   {/* Statistics Grid */}
-                  <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-4">
                     <div className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg">
                       <div className="flex items-center gap-2">
                         <Users className="w-4 h-4 text-blue-400" />
@@ -396,6 +588,18 @@ export default function ProblemRankingsOverview() {
                         {ps.conflictingTeams}
                       </span>
                     </div>
+
+                    <div className="flex items-center justify-between p-3 bg-gray-700/50 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <CheckCircle className="w-4 h-4 text-green-400" />
+                        <span className="text-gray-400 text-sm">
+                          Selected:
+                        </span>
+                      </div>
+                      <span className="text-green-400 font-medium">
+                        {ps.selectedTeams}
+                      </span>
+                    </div>
                   </div>
 
                   {/* Progress Bar */}
@@ -439,6 +643,136 @@ export default function ProblemRankingsOverview() {
                       ></div>
                     </div>
                   </div>
+
+                  {/* Expandable Team Consensus Rankings */}
+                  {expandedProblemStatements.has(ps._id) && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      transition={{ duration: 0.3 }}
+                      className="mt-6 pt-6 border-t border-gray-700"
+                    >
+                      <h3 className="text-lg font-display text-heading mb-4">
+                        Team Consensus Rankings
+                      </h3>
+                      
+                      {loadingDetails.has(ps._id) ? (
+                        <div className="flex items-center justify-center py-8">
+                          <div className="text-center">
+                            <div className="w-6 h-6 border-2 border-heading border-t-transparent rounded-full animate-spin mx-auto mb-2"></div>
+                            <p className="text-gray-400 text-sm">Loading team rankings...</p>
+                          </div>
+                        </div>
+                      ) : detailsData.has(ps._id) ? (
+                        <div>
+                          {/* Teams Grid - Horizontal Layout */}
+                          <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-4">
+                            {detailsData.get(ps._id)?.consensusAnalysis.map((team) => {
+                              const teamComments = team.rankings.filter(r => r.comments);
+                              
+                              return (
+                                <div key={team.team._id} className="bg-gray-700/30 border border-gray-600/50 rounded-lg p-3">
+                                  {/* Compact Team Card */}
+                                  <div className="space-y-3">
+                                    {/* Top Row: Rank + Team Name + Status */}
+                                    <div className="flex items-center justify-between gap-2">
+                                      <div className="flex items-center gap-2">
+                                        {/* Rank Badge */}
+                                        {team.consensus.averageRank && (
+                                          <div
+                                            className={`flex items-center gap-1 px-2 py-1 rounded border text-xs font-medium ${getRankColor(
+                                              Math.round(team.consensus.averageRank)
+                                            )}`}
+                                          >
+                                            {getRankIcon(Math.round(team.consensus.averageRank))}
+                                            <span>#{Math.round(team.consensus.averageRank)}</span>
+                                          </div>
+                                        )}
+                                        
+                                        {/* Team Name */}
+                                        <span className="text-sm font-display text-heading truncate">
+                                          {team.team.teamName}
+                                        </span>
+                                      </div>
+
+                                      {/* Status Badge */}
+                                      <span className={`text-xs px-2 py-0.5 rounded border whitespace-nowrap ${
+                                        team.team.status === "selected" 
+                                          ? "bg-green-500/20 text-green-400 border-green-500/30"
+                                          : team.team.status === "finalist"
+                                          ? "bg-purple-500/20 text-purple-400 border-purple-500/30"
+                                          : team.team.status === "rejected"
+                                          ? "bg-red-500/20 text-red-400 border-red-500/30"
+                                          : "bg-blue-500/20 text-blue-400 border-blue-500/30"
+                                      }`}>
+                                        {team.team.status}
+                                      </span>
+                                    </div>
+
+                                    {/* Leader Info */}
+                                    <div className="text-gray-400 text-xs truncate">
+                                      Leader: {team.team.leader.name}
+                                    </div>
+
+                                    {/* Evaluator Comments - Inside Card */}
+                                    {teamComments.length > 0 && (
+                                      <div className="bg-gray-600/40 border border-blue-500/20 rounded p-2 space-y-1">
+                                        <div className="text-blue-400 text-xs font-medium mb-1">💬 Comments:</div>
+                                        {teamComments.map((ranking, idx) => (
+                                          <div key={idx} className="text-xs text-gray-300 leading-relaxed">
+                                            <span className="text-blue-300 font-medium">{ranking.evaluatorEmail}:</span>{" "}
+                                            &ldquo;{ranking.comments}&rdquo;
+                                          </div>
+                                        ))}
+                                      </div>
+                                    )}
+
+                                    {/* Select Button */}
+                                    <button
+                                      onClick={() => selectTeam(team.team._id)}
+                                      disabled={team.team.status === "selected" || team.team.status === "finalist" || selectingTeamId === team.team._id}
+                                      className={`w-full px-3 py-1.5 text-xs font-medium rounded transition-colors flex items-center justify-center gap-1.5 ${
+                                        team.team.status === "selected" || team.team.status === "finalist"
+                                          ? "bg-gray-600 text-gray-400 cursor-not-allowed opacity-50"
+                                          : selectingTeamId === team.team._id
+                                          ? "bg-green-700 text-white opacity-75"
+                                          : "bg-green-600 hover:bg-green-500 text-white"
+                                      }`}
+                                      title={`Team status: ${team.team.status}`}
+                                    >
+                                      {selectingTeamId === team.team._id ? (
+                                        <>
+                                          <div className="w-3 h-3 border border-white border-t-transparent rounded-full animate-spin"></div>
+                                          Selecting...
+                                        </>
+                                      ) : (
+                                        <>
+                                          <CheckCircle className="w-3 h-3" />
+                                          {team.team.status === "selected" 
+                                            ? "Already Selected" 
+                                            : team.team.status === "finalist" 
+                                            ? "Finalist" 
+                                            : "Select Team"}
+                                        </>
+                                      )}
+                                    </button>
+                                  </div>
+                                </div>
+                              );
+                            })}
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="text-center py-8">
+                          <FileText className="mx-auto h-8 w-8 text-gray-400 mb-2" />
+                          <p className="text-gray-400 text-sm">
+                            No team rankings available
+                          </p>
+                        </div>
+                      )}
+                    </motion.div>
+                  )}
                 </motion.div>
               ))}
             </div>

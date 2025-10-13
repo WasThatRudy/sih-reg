@@ -4,7 +4,7 @@ A comprehensive backend system for the Smart India Hackathon (SIH) registration 
 
 # 🏗️ Architecture Overview
 
-### Tech Stack
+## Tech Stack
 
 - **Framework**: Next.js 15 with App Router
 - **Database**: MongoDB with Mongoose ODM

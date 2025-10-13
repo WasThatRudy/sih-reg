@@ -24,8 +24,12 @@ interface SelectedTeam {
 
 interface ResultsData {
   teams: SelectedTeam[];
+  selectedTeams: SelectedTeam[];
+  waitlistedTeams: SelectedTeam[];
   statistics: {
     totalSelectedTeams: number;
+    totalWaitlistedTeams: number;
+    totalTeams: number;
     uniqueProblemStatements: number;
   };
 }
@@ -47,16 +51,36 @@ const itemVariants = {
 };
 
 // TeamCard Component
-function TeamCard({ team, index }: { team: SelectedTeam; index: number }) {
+function TeamCard({
+  team,
+  index,
+  isWaitlisted = false,
+}: {
+  team: SelectedTeam;
+  index: number;
+  isWaitlisted?: boolean;
+}) {
   return (
     <motion.div
       variants={itemVariants}
-      className="bg-gradient-to-r from-gray-900/30 to-gray-800/20 border border-gray-700/30 rounded-xl p-6 hover:border-heading/30 transition-all duration-300 hover:bg-gray-800/40"
+      className={`bg-gradient-to-r ${
+        isWaitlisted
+          ? "from-yellow-900/20 to-yellow-800/10 border-yellow-700/30 hover:border-yellow-500/30"
+          : "from-gray-900/30 to-gray-800/20 border-gray-700/30 hover:border-heading/30"
+      } border rounded-xl p-6 transition-all duration-300 hover:bg-gray-800/40`}
     >
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <div className="bg-heading/20 p-2 rounded-lg min-w-[40px] h-[40px] flex items-center justify-center">
-            <span className="text-heading font-medium text-lg">
+          <div
+            className={`${
+              isWaitlisted ? "bg-yellow-500/20" : "bg-heading/20"
+            } p-2 rounded-lg min-w-[40px] h-[40px] flex items-center justify-center`}
+          >
+            <span
+              className={`${
+                isWaitlisted ? "text-yellow-400" : "text-heading"
+              } font-medium text-lg`}
+            >
               {index + 1}
             </span>
           </div>
@@ -67,8 +91,18 @@ function TeamCard({ team, index }: { team: SelectedTeam; index: number }) {
             <p className="text-gray-400 text-sm">Leader: {team.leader.name}</p>
           </div>
         </div>
-        <div className="bg-gradient-to-r from-blue-500/20 to-blue-400/10 border border-blue-500/30 rounded-lg px-3 py-1">
-          <span className="text-blue-400 font-medium text-sm">
+        <div
+          className={`bg-gradient-to-r ${
+            isWaitlisted
+              ? "from-yellow-500/20 to-yellow-400/10 border-yellow-500/30"
+              : "from-blue-500/20 to-blue-400/10 border-blue-500/30"
+          } border rounded-lg px-3 py-1`}
+        >
+          <span
+            className={`${
+              isWaitlisted ? "text-yellow-400" : "text-blue-400"
+            } font-medium text-sm`}
+          >
             PS{" "}
             {(() => {
               const psNumbers = team.problemStatement.psNumber.split("/");
@@ -108,8 +142,18 @@ export default function ResultsPage() {
   }, []);
 
   // Filter teams based on search
-  const filteredTeams =
-    data?.teams.filter((team) => {
+  const filteredSelectedTeams =
+    data?.selectedTeams.filter((team) => {
+      const matchesSearch =
+        searchTerm === "" ||
+        team.teamName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        team.leader.name.toLowerCase().includes(searchTerm.toLowerCase());
+
+      return matchesSearch;
+    }) || [];
+
+  const filteredWaitlistedTeams =
+    data?.waitlistedTeams.filter((team) => {
       const matchesSearch =
         searchTerm === "" ||
         team.teamName.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -162,7 +206,7 @@ export default function ResultsPage() {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.8, delay: 0.3 }}
-              className="grid grid-cols-1 md:grid-cols-2 gap-8 mt-16 max-w-3xl mx-auto"
+              className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-16 max-w-5xl mx-auto"
             >
               <motion.div
                 className="bg-gradient-to-br from-green-500/10 to-green-600/5 border border-green-500/20 rounded-3xl p-10 hover:border-green-500/30 transition-all duration-500 hover:scale-105"
@@ -181,7 +225,25 @@ export default function ResultsPage() {
                   Selected Teams
                 </div>
                 <div className="text-green-400/60 font-body text-sm mt-2">
-                  🎉 Congratulations to all winners!
+                  🎉 Congratulations!
+                </div>
+              </motion.div>
+
+              <motion.div
+                className="bg-gradient-to-br from-yellow-500/10 to-yellow-600/5 border border-yellow-500/20 rounded-3xl p-10 hover:border-yellow-500/30 transition-all duration-500 hover:scale-105"
+                whileHover={{ y: -5 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              >
+                <div className="flex items-center justify-center mb-6">
+                  <div className="bg-yellow-500/20 p-4 rounded-2xl">
+                    <Star className="w-10 h-10 text-yellow-400" />
+                  </div>
+                </div>
+                <div className="text-4xl font-display text-yellow-400 mb-3 font-light">
+                  {data.statistics.totalWaitlistedTeams}
+                </div>
+                <div className="text-gray-300 font-body text-lg">
+                  Waitlisted Teams
                 </div>
               </motion.div>
 
@@ -192,7 +254,7 @@ export default function ResultsPage() {
               >
                 <div className="flex items-center justify-center mb-6">
                   <div className="bg-heading/20 p-4 rounded-2xl">
-                    <Star className="w-10 h-10 text-heading" />
+                    <Trophy className="w-10 h-10 text-heading" />
                   </div>
                 </div>
                 <div className="text-4xl font-display text-heading mb-3 font-light">
@@ -202,7 +264,7 @@ export default function ResultsPage() {
                   Problem Statements
                 </div>
                 <div className="text-heading/60 font-body text-sm mt-2">
-                  💡 Diverse innovation domains
+                  💡 Diverse domains
                 </div>
               </motion.div>
             </motion.div>
@@ -228,49 +290,114 @@ export default function ResultsPage() {
         </section>
       )}
 
-      {/* Results Section */}
-      {data && (
+      {/* Selected Teams Section */}
+      {data && filteredSelectedTeams.length > 0 && (
         <section className="py-16 px-6">
           <div className="max-w-4xl mx-auto">
             <motion.div
-              variants={containerVariants}
-              initial="hidden"
-              animate="visible"
-              className="space-y-4"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-12"
             >
-              {filteredTeams.map((team, index) => (
-                <TeamCard key={team._id} team={team} index={index} />
-              ))}
+              <div className="flex items-center gap-3 mb-8">
+                <div className="bg-green-500/20 p-3 rounded-xl">
+                  <CheckCircle className="w-8 h-8 text-green-400" />
+                </div>
+                <div>
+                  <h2 className="font-display text-3xl text-white font-light">
+                    Selected Teams
+                  </h2>
+                  <p className="text-green-400/80 text-sm mt-1">
+                    Congratulations to all selected teams! 🎉
+                  </p>
+                </div>
+              </div>
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="space-y-4"
+              >
+                {filteredSelectedTeams.map((team, index) => (
+                  <TeamCard
+                    key={team._id}
+                    team={team}
+                    index={index}
+                    isWaitlisted={false}
+                  />
+                ))}
+              </motion.div>
+            </motion.div>
+          </div>
+        </section>
+      )}
+
+      {/* Waitlisted Teams Section */}
+      {data && filteredWaitlistedTeams.length > 0 && (
+        <section className="py-16 px-6 border-t border-gray-800/50">
+          <div className="max-w-4xl mx-auto">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mb-12"
+            >
+              <div className="flex items-center gap-3 mb-8">
+                <div className="bg-yellow-500/20 p-3 rounded-xl">
+                  <Star className="w-8 h-8 text-yellow-400" />
+                </div>
+                <div>
+                  <h2 className="font-display text-3xl text-white font-light">
+                    Waitlisted Teams
+                  </h2>
+                </div>
+              </div>
+              <motion.div
+                variants={containerVariants}
+                initial="hidden"
+                animate="visible"
+                className="space-y-4"
+              >
+                {filteredWaitlistedTeams.map((team, index) => (
+                  <TeamCard
+                    key={team._id}
+                    team={team}
+                    index={index}
+                    isWaitlisted={true}
+                  />
+                ))}
+              </motion.div>
             </motion.div>
           </div>
         </section>
       )}
 
       {/* No Results */}
-      {data && filteredTeams.length === 0 && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-center py-20"
-        >
-          <div className="bg-gray-900/30 border border-gray-700/50 rounded-3xl p-16 max-w-md mx-auto">
-            <div className="text-8xl mb-6 opacity-50">🔍</div>
-            <h3 className="text-3xl font-display text-heading mb-4 font-light">
-              No Results Found
-            </h3>
-            <p className="text-gray-300 text-lg leading-relaxed">
-              Try adjusting your search terms to find what you&apos;re looking
-              for.
-            </p>
-            <button
-              onClick={() => setSearchTerm("")}
-              className="mt-6 px-6 py-3 bg-heading/20 hover:bg-heading/30 border border-heading/30 text-heading rounded-xl transition-all duration-300"
-            >
-              Clear Search
-            </button>
-          </div>
-        </motion.div>
-      )}
+      {data &&
+        filteredSelectedTeams.length === 0 &&
+        filteredWaitlistedTeams.length === 0 && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="text-center py-20"
+          >
+            <div className="bg-gray-900/30 border border-gray-700/50 rounded-3xl p-16 max-w-md mx-auto">
+              <div className="text-8xl mb-6 opacity-50">🔍</div>
+              <h3 className="text-3xl font-display text-heading mb-4 font-light">
+                No Results Found
+              </h3>
+              <p className="text-gray-300 text-lg leading-relaxed">
+                Try adjusting your search terms to find what you&apos;re looking
+                for.
+              </p>
+              <button
+                onClick={() => setSearchTerm("")}
+                className="mt-6 px-6 py-3 bg-heading/20 hover:bg-heading/30 border border-heading/30 text-heading rounded-xl transition-all duration-300"
+              >
+                Clear Search
+              </button>
+            </div>
+          </motion.div>
+        )}
     </div>
   );
 }

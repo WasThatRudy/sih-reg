@@ -25,7 +25,7 @@ export interface IDeletedTeam extends Document {
     title: string;
     domain: string;
   };
-  status: "registered" | "selected" | "rejected" | "finalist";
+  status: "registered" | "selected" | "waitlisted" | "rejected" | "finalist";
   tasks: ITaskSubmission[];
   registrationDate: Date;
   // Deletion metadata
@@ -98,8 +98,8 @@ const taskSubmissionSchema = new Schema<ITaskSubmission>(
         type: String,
       },
     ],
-    textResponse: {
-      type: String,
+    data: {
+      type: Schema.Types.Mixed, // Record<string, string | number>
     },
     status: {
       type: String,
@@ -151,7 +151,7 @@ const deletedTeamSchema = new Schema<IDeletedTeam>(
     },
     status: {
       type: String,
-      enum: ["registered", "selected", "rejected", "finalist"],
+      enum: ["registered", "selected", "waitlisted", "rejected", "finalist"],
       required: true,
     },
     tasks: [taskSubmissionSchema],

@@ -149,7 +149,7 @@ export async function PUT(request: NextRequest) {
       );
     }
 
-    const validStatuses = ["registered", "selected", "rejected", "finalist"];
+    const validStatuses = ["registered", "selected", "waitlisted", "rejected", "finalist"];
     if (!validStatuses.includes(status)) {
       return NextResponse.json(
         { success: false, error: "Invalid status" },

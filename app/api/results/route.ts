@@ -11,13 +11,22 @@ export async function GET(request: NextRequest) {
     await dbConnect();
 
     const url = new URL(request.url);
-    const status = url.searchParams.get("status") || "selected";
+    const statusParam = url.searchParams.get("status");
+
+    // If status is provided, use it; otherwise fetch both selected and waitlisted
+    const statusFilter = statusParam || ["selected", "waitlisted"];
 
     // Build aggregation pipeline to get teams with populated data
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const pipeline: any[] = [
-      // Match teams with the specified status
-      { $match: { status } },
+      // Match teams with the specified status (either single or multiple)
+      {
+        $match: {
+          status: Array.isArray(statusFilter)
+            ? { $in: statusFilter }
+            : statusFilter,
+        },
+      },
 
       // Lookup leader data
       {
@@ -67,6 +76,16 @@ export async function GET(request: NextRequest) {
     // Execute aggregation
     const teams = await Team.aggregate(pipeline);
 
+    // Separate teams by status
+    const selectedTeams = teams.filter(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (team: any) => team.status === "selected"
+    );
+    const waitlistedTeams = teams.filter(
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      (team: any) => team.status === "waitlisted"
+    );
+
     // Group teams by problem statement for better organization
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const teamsByPS = teams.reduce((acc: any, team: any) => {
@@ -84,9 +103,13 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({
       success: true,
       teams,
+      selectedTeams,
+      waitlistedTeams,
       teamsByPS,
       statistics: {
-        totalSelectedTeams: teams.length,
+        totalSelectedTeams: selectedTeams.length,
+        totalWaitlistedTeams: waitlistedTeams.length,
+        totalTeams: teams.length,
         uniqueProblemStatements: Object.keys(teamsByPS).length,
       },
     });

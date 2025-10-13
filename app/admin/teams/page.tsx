@@ -28,7 +28,7 @@ interface Team {
     psNumber: string;
     title: string;
   };
-  status: "registered" | "selected" | "rejected" | "finalist";
+  status: "registered" | "selected" | "waitlisted" | "rejected" | "finalist";
   registrationDate: string;
   createdAt?: string;
 }
@@ -52,7 +52,7 @@ interface DetailedTeam {
     domain?: string;
     description?: string;
   };
-  status: "registered" | "selected" | "rejected" | "finalist";
+  status: "registered" | "selected" | "waitlisted" | "rejected" | "finalist";
   registrationDate: string;
   createdAt: string;
   updatedAt: string;
@@ -84,6 +84,7 @@ export default function TeamsManagement() {
   const statusColors = {
     registered: "bg-blue-500/20 text-blue-400 border-blue-500/30",
     selected: "bg-green-500/20 text-green-400 border-green-500/30",
+    waitlisted: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
     rejected: "bg-red-500/20 text-red-400 border-red-500/30",
     finalist: "bg-purple-500/20 text-purple-400 border-purple-500/30",
   };
@@ -273,21 +274,26 @@ export default function TeamsManagement() {
 
             {/* Status Filter */}
             <div className="flex gap-2">
-              {["all", "registered", "selected", "rejected", "finalist"].map(
-                (status) => (
-                  <button
-                    key={status}
-                    onClick={() => setFilter(status)}
-                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${
-                      filter === status
-                        ? "bg-heading/20 text-heading border border-heading/30"
-                        : "bg-gray-800/50 text-gray-400 border border-gray-600 hover:bg-gray-700/50"
-                    }`}
-                  >
-                    {status}
-                  </button>
-                )
-              )}
+              {[
+                "all",
+                "registered",
+                "selected",
+                "waitlisted",
+                "rejected",
+                "finalist",
+              ].map((status) => (
+                <button
+                  key={status}
+                  onClick={() => setFilter(status)}
+                  className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors capitalize ${
+                    filter === status
+                      ? "bg-heading/20 text-heading border border-heading/30"
+                      : "bg-gray-800/50 text-gray-400 border border-gray-600 hover:bg-gray-700/50"
+                  }`}
+                >
+                  {status}
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -413,6 +419,7 @@ export default function TeamsManagement() {
                             >
                               <option value="registered">Registered</option>
                               <option value="selected">Selected</option>
+                              <option value="waitlisted">Waitlisted</option>
                               <option value="rejected">Rejected</option>
                               <option value="finalist">Finalist</option>
                             </select>
